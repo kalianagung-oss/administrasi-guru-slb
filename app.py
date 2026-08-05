@@ -97,7 +97,7 @@ with tab1:
                 Gunakan prinsip hierarki konsep (mudah ke sulit, konkret ke abstrak).
                 """
                 
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 response = model.generate_content(prompt_tab1)
                 st.markdown(response.text)
 
@@ -146,7 +146,7 @@ with tab2:
                 
                 Catatan Khusus: Sesuaikan langkah kegiatan dengan karakteristik anak {jenis_kekhususan}.
                 """
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 response = model.generate_content(prompt_rpp)
                 st.markdown(response.text)
 
@@ -189,7 +189,7 @@ with tab3:
                 
                 Sajikan dalam format Markdown yang sangat rapi dan ramah cetak.
                 """
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 response = model.generate_content(prompt_lkm)
                 st.markdown(response.text)
 
@@ -221,6 +221,6 @@ with tab4:
                 3. Gaya Ilustrasi (Flat Design / Modern Vector)
                 4. Prompt Text dalam Bahasa Inggris untuk generator gambar (Midjourney/DALL-E/Canva) agar menghasilkan latar belakang sampul A4 portrait yang bersih dan edukatif.
                 """
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-2.5-flash')
                 response = model.generate_content(prompt_cover)
                 st.markdown(response.text)
