@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
 # -----------------------------------------------------------------------------
 # KONFIGURASI HALAMAN STREAMLIT
@@ -15,11 +15,6 @@ st.set_page_config(
 # -----------------------------------------------------------------------------
 st.sidebar.title("🔑 Pengaturan AI")
 api_key = st.sidebar.text_input("Masukkan Google Gemini API Key:", type="password")
-
-if api_key:
-    genai.configure(api_key=api_key)
-else:
-    st.sidebar.warning("Silakan masukkan API Key Google Gemini untuk menjalankan aplikasi.")
 
 st.sidebar.markdown("---")
 st.sidebar.info("Aplikasi Asisten Administrasi Guru SLB Kurikulum Merdeka.")
@@ -51,7 +46,7 @@ with st.expander("📌 **Identitas Guru & Satuan Pendidikan** (Isi Terlebih Dahu
         mata_pelajaran = st.text_input("Mata Pelajaran", "IPAS / IPA")
 
 # -----------------------------------------------------------------------------
-# MENU UTAMA TAB BERSEDERHANA
+# MENU UTAMA TAB
 # -----------------------------------------------------------------------------
 tab1, tab2, tab3, tab4 = st.tabs([
     "📋 1. CP, TP, ATP, Prota & Promes", 
@@ -78,28 +73,34 @@ with tab1:
             st.error("API Key Gemini belum diisi di sidebar!")
         else:
             with st.spinner("Sedang memproses dokumen..."):
-                prompt_tab1 = f"""
-                Bertindaklah sebagai Konsultan Kurikulum Sekolah Luar Biasa (SLB).
-                Identitas:
-                - Nama Guru: {nama_guru} (NIP: {nip_guru})
-                - Kepala Sekolah: {nama_ks} (NIP: {nip_ks})
-                - Sekolah: {nama_sekolah}
-                - Jenis Kekhususan: {jenis_kekhususan}
-                - Jenjang/Fase: {fase_kelas}
-                - Mata Pelajaran: {mata_pelajaran}
-                - Tahun Pelajaran: {tahun_ajaran}
-                
-                Capaian Pembelajaran (CP): {cp_text}
-                Daftar Materi: {materi_list}
-                
-                Tugas: Buatkan pemetaan {sub_option} lengkap dalam bentuk tabel Markdown yang rapi.
-                Sesuaikan tingkat kesulitan, instruksi, dan bahasa agar relevan dengan karakter peserta didik berkebutuhan khusus ({jenis_kekhususan}).
-                Gunakan prinsip hierarki konsep (mudah ke sulit, konkret ke abstrak).
-                """
-                
-                model = genai.GenerativeModel('gemini-2.5-flash')
-                response = model.generate_content(prompt_tab1)
-                st.markdown(response.text)
+                try:
+                    client = genai.Client(api_key=api_key)
+                    prompt_tab1 = f"""
+                    Bertindaklah sebagai Konsultan Kurikulum Sekolah Luar Biasa (SLB).
+                    Identitas:
+                    - Nama Guru: {nama_guru} (NIP: {nip_guru})
+                    - Kepala Sekolah: {nama_ks} (NIP: {nip_ks})
+                    - Sekolah: {nama_sekolah}
+                    - Jenis Kekhususan: {jenis_kekhususan}
+                    - Jenjang/Fase: {fase_kelas}
+                    - Mata Pelajaran: {mata_pelajaran}
+                    - Tahun Pelajaran: {tahun_ajaran}
+                    
+                    Capaian Pembelajaran (CP): {cp_text}
+                    Daftar Materi: {materi_list}
+                    
+                    Tugas: Buatkan pemetaan {sub_option} lengkap dalam bentuk tabel Markdown yang rapi.
+                    Sesuaikan tingkat kesulitan, instruksi, dan bahasa agar relevan dengan karakter peserta didik berkebutuhan khusus ({jenis_kekhususan}).
+                    Gunakan prinsip hierarki konsep (mudah ke sulit, konkret ke abstrak).
+                    """
+                    
+                    response = client.models.generate_content(
+                        model='gemini-2.5-flash',
+                        contents=prompt_tab1,
+                    )
+                    st.markdown(response.text)
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan: {e}. Pastikan API Key diawali dengan 'AIzaSy...'")
 
 # =============================================================================
 # TAB 2: MODUL AJAR / RPP MENDALAM
@@ -121,34 +122,40 @@ with tab2:
             st.error("API Key Gemini belum diisi di sidebar!")
         else:
             with st.spinner("Merancang Modul Ajar..."):
-                prompt_rpp = f"""
-                Bertindaklah sebagai Guru Penggerak dan Ahli Pembelajaran Khusus SLB.
-                Buat RPP/Modul Ajar dengan format Markdown.
-                
-                Identitas:
-                - Guru: {nama_guru} | NIP: {nip_guru}
-                - Sekolah: {nama_sekolah}
-                - Mapel: {mata_pelajaran} | Fase/Kelas: {fase_kelas}
-                - Jenis Kekhususan: {jenis_kekhususan}
-                - Topik: {topik_rpp}
-                - Tujuan Pembelajaran: {tp_rpp}
-                - Alokasi Waktu: {alokasi_waktu}
-                - Model Pembelajaran: {model_pembelajaran}
-                - Prinsip: {', '.join(prinsip_pembelajaran)}
-                
-                Sajikan dalam struktur tabel 2 kolom sesuai instruksi:
-                1. Judul Catchy di bagian atas
-                2. Identitas Pembelajaran
-                3. Identifikasi & Desain Pembelajaran (Integrasi Ice Breaking & Kontekstual)
-                4. Langkah Kegiatan (Pendahuluan, Inti sesuai Sintak {model_pembelajaran}, Penutup)
-                5. Asesmen (Formatif Awal, Proses, dan Akhir beserta Soal & Kunci)
-                6. KKTP, Program Remedial, dan Pengayaan
-                
-                Catatan Khusus: Sesuaikan langkah kegiatan dengan karakteristik anak {jenis_kekhususan}.
-                """
-                model = genai.GenerativeModel('gemini-2.5-flash')
-                response = model.generate_content(prompt_rpp)
-                st.markdown(response.text)
+                try:
+                    client = genai.Client(api_key=api_key)
+                    prompt_rpp = f"""
+                    Bertindaklah sebagai Guru Penggerak dan Ahli Pembelajaran Khusus SLB.
+                    Buat RPP/Modul Ajar dengan format Markdown.
+                    
+                    Identitas:
+                    - Guru: {nama_guru} | NIP: {nip_guru}
+                    - Sekolah: {nama_sekolah}
+                    - Mapel: {mata_pelajaran} | Fase/Kelas: {fase_kelas}
+                    - Jenis Kekhususan: {jenis_kekhususan}
+                    - Topik: {topik_rpp}
+                    - Tujuan Pembelajaran: {tp_rpp}
+                    - Alokasi Waktu: {alokasi_waktu}
+                    - Model Pembelajaran: {model_pembelajaran}
+                    - Prinsip: {', '.join(prinsip_pembelajaran)}
+                    
+                    Sajikan dalam struktur tabel 2 kolom sesuai instruksi:
+                    1. Judul Catchy di bagian atas
+                    2. Identitas Pembelajaran
+                    3. Identifikasi & Desain Pembelajaran (Integrasi Ice Breaking & Kontekstual)
+                    4. Langkah Kegiatan (Pendahuluan, Inti sesuai Sintak {model_pembelajaran}, Penutup)
+                    5. Asesmen (Formatif Awal, Proses, dan Akhir beserta Soal & Kunci)
+                    6. KKTP, Program Remedial, dan Pengayaan
+                    
+                    Catatan Khusus: Sesuaikan langkah kegiatan dengan karakteristik anak {jenis_kekhususan}.
+                    """
+                    response = client.models.generate_content(
+                        model='gemini-2.5-flash',
+                        contents=prompt_rpp,
+                    )
+                    st.markdown(response.text)
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan: {e}. Pastikan API Key diawali dengan 'AIzaSy...'")
 
 # =============================================================================
 # TAB 3: LEMBAR KERJA MURID (LKM / LKPD) INTERAKTIF
@@ -164,34 +171,40 @@ with tab3:
             st.error("API Key Gemini belum diisi di sidebar!")
         else:
             with st.spinner("Membuat LKM Workbook..."):
-                prompt_lkm = f"""
-                Bertindaklah sebagai Senior Instructional Designer & Educational Graphic Designer untuk SLB.
-                Tugas Anda adalah membuat Lembar Kerja Murid (LKM) berformat Markdown interaktif siap cetak A4.
-                
-                Informasi LKM:
-                - Mata Pelajaran: {mata_pelajaran}
-                - Kelas/Fase: {fase_kelas}
-                - Jenis Kekhususan: {jenis_kekhususan}
-                - Materi/Topik: {materi_lkm}
-                - Tujuan Pembelajaran: {tp_lkm}
-                
-                Struktur LKM Wajib:
-                1. Cover Mini (Judul, Nama, Kelas, Tanggal)
-                2. Tujuan Belajar Sederhana
-                3. Petunjuk Pengerjaan dengan Ikon
-                4. Apersepsi Visual & Pertanyaan Pemantik
-                5. Aktivitas 1 – Amati (disertai deskripsi visual gambar yang mudah dicari/digambar)
-                6. Aktivitas 2 – Diskusikan/Tanya Jawab
-                7. Aktivitas 3 – Eksplorasi Konkret
-                8. Aktivitas 4 – Berkarya/Mewarnai
-                9. Tantangan Sederhana
-                10. Refleksi Murid (😊 😐 😔)
-                
-                Sajikan dalam format Markdown yang sangat rapi dan ramah cetak.
-                """
-                model = genai.GenerativeModel('gemini-2.5-flash')
-                response = model.generate_content(prompt_lkm)
-                st.markdown(response.text)
+                try:
+                    client = genai.Client(api_key=api_key)
+                    prompt_lkm = f"""
+                    Bertindaklah sebagai Senior Instructional Designer & Educational Graphic Designer untuk SLB.
+                    Tugas Anda adalah membuat Lembar Kerja Murid (LKM) berformat Markdown interaktif siap cetak A4.
+                    
+                    Informasi LKM:
+                    - Mata Pelajaran: {mata_pelajaran}
+                    - Kelas/Fase: {fase_kelas}
+                    - Jenis Kekhususan: {jenis_kekhususan}
+                    - Materi/Topik: {materi_lkm}
+                    - Tujuan Pembelajaran: {tp_lkm}
+                    
+                    Struktur LKM Wajib:
+                    1. Cover Mini (Judul, Nama, Kelas, Tanggal)
+                    2. Tujuan Belajar Sederhana
+                    3. Petunjuk Pengerjaan dengan Ikon
+                    4. Apersepsi Visual & Pertanyaan Pemantik
+                    5. Aktivitas 1 – Amati (disertai deskripsi visual gambar yang mudah dicari/digambar)
+                    6. Aktivitas 2 – Diskusikan/Tanya Jawab
+                    7. Aktivitas 3 – Eksplorasi Konkret
+                    8. Aktivitas 4 – Berkarya/Mewarnai
+                    9. Tantangan Sederhana
+                    10. Refleksi Murid (😊 😐 😔)
+                    
+                    Sajikan dalam format Markdown yang sangat rapi dan ramah cetak.
+                    """
+                    response = client.models.generate_content(
+                        model='gemini-2.5-flash',
+                        contents=prompt_lkm,
+                    )
+                    st.markdown(response.text)
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan: {e}. Pastikan API Key diawali dengan 'AIzaSy...'")
 
 # =============================================================================
 # TAB 4: GENERATOR PROMPT SAMPUL/COVER
@@ -206,21 +219,27 @@ with tab4:
             st.error("API Key Gemini belum diisi di sidebar!")
         else:
             with st.spinner("Merancang konsep visual sampul..."):
-                prompt_cover = f"""
-                Bertindaklah sebagai Creative Education Graphic Designer & Art Director.
-                Buatlah instruksi/prompt desain visual sampul A4 untuk dokumen berikut:
-                - Judul Utama: {judul_sampul}
-                - Mata Pelajaran: {mata_pelajaran}
-                - Sekolah: {nama_sekolah}
-                - Penyusun: {nama_guru}
-                - Target Siswa: SLB ({jenis_kekhususan})
-                
-                Berikan detail:
-                1. Tata Letak (Visual Hierarchy)
-                2. Palet Warna Harmonis yang cocok untuk {mata_pelajaran}
-                3. Gaya Ilustrasi (Flat Design / Modern Vector)
-                4. Prompt Text dalam Bahasa Inggris untuk generator gambar (Midjourney/DALL-E/Canva) agar menghasilkan latar belakang sampul A4 portrait yang bersih dan edukatif.
-                """
-                model = genai.GenerativeModel('gemini-2.5-flash')
-                response = model.generate_content(prompt_cover)
-                st.markdown(response.text)
+                try:
+                    client = genai.Client(api_key=api_key)
+                    prompt_cover = f"""
+                    Bertindaklah sebagai Creative Education Graphic Designer & Art Director.
+                    Buatlah instruksi/prompt desain visual sampul A4 untuk dokumen berikut:
+                    - Judul Utama: {judul_sampul}
+                    - Mata Pelajaran: {mata_pelajaran}
+                    - Sekolah: {nama_sekolah}
+                    - Penyusun: {nama_guru}
+                    - Target Siswa: SLB ({jenis_kekhususan})
+                    
+                    Berikan detail:
+                    1. Tata Letak (Visual Hierarchy)
+                    2. Palet Warna Harmonis yang cocok untuk {mata_pelajaran}
+                    3. Gaya Ilustrasi (Flat Design / Modern Vector)
+                    4. Prompt Text dalam Bahasa Inggris untuk generator gambar (Midjourney/DALL-E/Canva) agar menghasilkan latar belakang sampul A4 portrait yang bersih dan edukatif.
+                    """
+                    response = client.models.generate_content(
+                        model='gemini-2.5-flash',
+                        contents=prompt_cover,
+                    )
+                    st.markdown(response.text)
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan: {e}. Pastikan API Key diawali dengan 'AIzaSy...'")
