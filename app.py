@@ -103,7 +103,7 @@ with tab1:
                     """
                     
                     response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-1.5-flash',
                         contents=prompt_tab1,
                     )
                     st.markdown(response.text)
@@ -158,7 +158,7 @@ with tab2:
                     Catatan Khusus: Sesuaikan langkah kegiatan dengan karakteristik anak {jenis_kekhususan}.
                     """
                     response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-1.5-flash',
                         contents=prompt_rpp,
                     )
                     st.markdown(response.text)
@@ -207,7 +207,7 @@ with tab3:
                     Sajikan dalam format Markdown yang sangat rapi dan ramah cetak.
                     """
                     response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-1.5-flash',
                         contents=prompt_lkm,
                     )
                     st.markdown(response.text)
@@ -245,7 +245,7 @@ with tab4:
                     4. Prompt Text dalam Bahasa Inggris untuk generator gambar (Midjourney/DALL-E/Canva) agar menghasilkan latar belakang sampul A4 portrait yang bersih dan edukatif.
                     """
                     response = client.models.generate_content(
-                        model='gemini-2.5-flash',
+                        model='gemini-1.5-flash',
                         contents=prompt_cover,
                     )
                     st.markdown(response.text)
