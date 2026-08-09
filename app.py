@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 
 # -----------------------------------------------------------------------------
-# KONFIGURASI HALAMAN & TAMPILAN MODERN
+# KONFIGURASI HALAMAN STREAMLIT
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Asisten Administrasi Guru SLB",
@@ -30,18 +30,14 @@ st.markdown("""
         width: 100%;
         border: none;
     }
-    .stButton>button:hover {
-        background-color: #1D4ED8;
-    }
+    .stButton>button:hover { background-color: #1D4ED8; }
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# SIDEBAR - PENGATURAN KUNCI API
+# PENGATURAN API KEY GEMINI
 # -----------------------------------------------------------------------------
 st.sidebar.title("⚙️ Pengaturan AI")
-
-# Memeriksa API Key dari Secrets Streamlit
 api_key = st.secrets.get("GEMINI_API_KEY", "")
 
 if not api_key:
@@ -56,32 +52,36 @@ st.sidebar.markdown("---")
 st.sidebar.info("Aplikasi Administrasi Guru SLB - Kurikulum Merdeka")
 
 # -----------------------------------------------------------------------------
-# FUNGSI PANGGILAN DIRECT REST API (MENDUKUNG SEMUA JENIS KUNCI)
+# FUNGSI PANGGILAN DIRECT REST API PRESISI (MULTI-MODEL AUTO FALLBACK)
 # -----------------------------------------------------------------------------
 def minta_bantuan_ai(prompt_text, key_val):
-    # Menggunakan endpoint v1beta generateContent resmi
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key_val}"
+    # Menguji kandidat endpoint resmi terbaru
+    models_to_try = [
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+    ]
     
-    headers = {"Content-Type": "application/json"}
     payload = {
-        "contents": [
-            {
-                "parts": [{"text": prompt_text}]
-            }
-        ]
+        "contents": [{"parts": [{"text": prompt_text}]}]
     }
+    headers = {"Content-Type": "application/json"}
     
-    response = requests.post(url, headers=headers, json=payload, timeout=60)
-    
-    if response.status_code == 200:
-        data = response.json()
+    last_err = ""
+    for base_url in models_to_try:
+        url = f"{base_url}?key={key_val}"
         try:
-            return data["candidates"][0]["content"]["parts"][0]["text"]
-        except (KeyError, IndexError):
-            raise Exception("Format respon AI tidak valid.")
-    else:
-        err_msg = response.json().get("error", {}).get("message", response.text)
-        raise Exception(f"Gagal dari Server AI ({response.status_code}): {err_msg}")
+            res = requests.post(url, headers=headers, json=payload, timeout=60)
+            if res.status_code == 200:
+                data = res.json()
+                return data["candidates"][0]["content"]["parts"][0]["text"]
+            else:
+                last_err = res.json().get("error", {}).get("message", res.text)
+        except Exception as e:
+            last_err = str(e)
+            continue
+            
+    raise Exception(f"Gagal dari Server AI: {last_err}")
 
 # -----------------------------------------------------------------------------
 # BANNER UTAMA
@@ -114,7 +114,7 @@ with st.expander("📌 **Identitas Guru & Satuan Pendidikan**", expanded=True):
              "Autis / Spektrum Autisme", "Ganda / Kombinasi"]
         )
         fase_kelas = st.selectbox("Fase / Kelas", ["Fase A (Kelas 1-2)", "Fase B (Kelas 3-4)", "Fase C (Kelas 5-6)", "Fase D (SMPLB)", "Fase E/F (SMALB)"])
-        mata_pelajaran = st.text_input("Mata Pelajaran", "IPAS / IPA")
+        mata_pelajaran = st.text_input("Mata Pelajaran", "Matematika")
 
 # -----------------------------------------------------------------------------
 # MENU UTAMA TAB DOKUMEN
@@ -129,8 +129,8 @@ tab1, tab2, tab3, tab4 = st.tabs([
 # TAB 1: PEMETAAN CP, TP, ATP
 with tab1:
     st.subheader("📋 Pemetaan Capaian & Tujuan Pembelajaran")
-    cp_input = st.text_area("Masukkan Capaian Pembelajaran (CP):", "Peserta didik dapat mengidentifikasi benda-benda di sekitar...", height=100)
-    materi_input = st.text_area("Masukkan Materi / Bab:", "1. Mengenal Anggota Tubuh\n2. Merawat Diri", height=100)
+    cp_input = st.text_area("Masukkan Capaian Pembelajaran (CP):", "Mengenal benda-benda bangun ruang dan mengelompokkannya sesuai dengan jenis dan sifatnya...", height=100)
+    materi_input = st.text_area("Masukkan Materi / Bab:", "Bilangan dan Lambang Bilangan\nUkuran dan Perbandingan\nBentuk dan Pola Sederhana", height=100)
     
     if st.button("🚀 Buat Pemetaan CP, TP & ATP"):
         if not api_key:
@@ -155,8 +155,8 @@ with tab1:
 # TAB 2: RPP / MODUL AJAR
 with tab2:
     st.subheader("📝 Modul Ajar Pembelajaran Khusus")
-    topik = st.text_input("Topik Pembelajaran:", "Mengenal Buah-Buahan")
-    tp = st.text_area("Tujuan Pembelajaran (TP):", "Siswa dapat menunjukkan 3 jenis buah konkret.")
+    topik = st.text_input("Topik Pembelajaran:", "Mengenal Bangun Ruang Kubus dan Balok")
+    tp = st.text_area("Tujuan Pembelajaran (TP):", "Siswa dapat menunjukkan benda berbentuk kubus dan balok di sekitar kelas.")
     
     if st.button("🚀 Buat Modul Ajar / RPP"):
         if not api_key:
@@ -179,7 +179,7 @@ with tab2:
 # TAB 3: LKPD INTERAKTIF
 with tab3:
     st.subheader("🎨 Lembar Kerja Murid (LKPD)")
-    materi_lkpd = st.text_input("Topik LKPD:", "Mewarnai & Menghitung Buah")
+    materi_lkpd = st.text_input("Topik LKPD:", "Mewarnai & Mengelompokkan Bangun Ruang")
     
     if st.button("🚀 Buat LKPD Interaktif"):
         if not api_key:
@@ -201,7 +201,7 @@ with tab3:
 # TAB 4: PROMPT SAMPUL
 with tab4:
     st.subheader("🖼️ Generator Prompt Sampul Dokumen")
-    judul_cover = st.text_input("Judul Sampul:", "MODUL AJAR IPAS FASE A")
+    judul_cover = st.text_input("Judul Sampul:", "MODUL AJAR MATEMATIKA FASE A SLB")
     
     if st.button("🚀 Buat Prompt Sampul"):
         if not api_key:
