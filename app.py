@@ -1,5 +1,5 @@
 import streamlit as st
-from google import genai
+import google.generativeai as genai
 
 # -----------------------------------------------------------------------------
 # KONFIGURASI HALAMAN STREAMLIT
@@ -11,11 +11,11 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# PENGATURAN API KEY GEMINI (Mendukung Input Manual & Secrets)
+# PENGATURAN API KEY GEMINI
 # -----------------------------------------------------------------------------
 st.sidebar.title("🔑 Pengaturan AI")
 
-# Memeriksa apakah API Key sudah tersimpan di Secrets
+# Memeriksa API Key dari Secrets Streamlit
 secrets_key = st.secrets.get("GEMINI_API_KEY", "")
 
 if secrets_key:
@@ -82,7 +82,7 @@ with tab1:
         else:
             with st.spinner("Sedang memproses dokumen..."):
                 try:
-                    client = genai.Client(api_key=api_key)
+                    genai.configure(api_key=api_key)
                     prompt_tab1 = f"""
                     Bertindaklah sebagai Konsultan Kurikulum Sekolah Luar Biasa (SLB).
                     Identitas:
@@ -102,10 +102,14 @@ with tab1:
                     Gunakan prinsip hierarki konsep (mudah ke sulit, konkret ke abstrak).
                     """
                     
-                    response = client.models.generate_content(
-                        model='gemini-1.5-flash',
-                        contents=prompt_tab1,
-                    )
+                    # Mencari model alternatif jika flash mengalami limitasi
+                    try:
+                        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                        response = model.generate_content(prompt_tab1)
+                    except:
+                        model = genai.GenerativeModel('gemini-pro')
+                        response = model.generate_content(prompt_tab1)
+
                     st.markdown(response.text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
@@ -131,7 +135,7 @@ with tab2:
         else:
             with st.spinner("Merancang Modul Ajar..."):
                 try:
-                    client = genai.Client(api_key=api_key)
+                    genai.configure(api_key=api_key)
                     prompt_rpp = f"""
                     Bertindaklah sebagai Guru Penggerak dan Ahli Pembelajaran Khusus SLB.
                     Buat RPP/Modul Ajar dengan format Markdown.
@@ -157,10 +161,13 @@ with tab2:
                     
                     Catatan Khusus: Sesuaikan langkah kegiatan dengan karakteristik anak {jenis_kekhususan}.
                     """
-                    response = client.models.generate_content(
-                        model='gemini-1.5-flash',
-                        contents=prompt_rpp,
-                    )
+                    try:
+                        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                        response = model.generate_content(prompt_rpp)
+                    except:
+                        model = genai.GenerativeModel('gemini-pro')
+                        response = model.generate_content(prompt_rpp)
+
                     st.markdown(response.text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
@@ -180,7 +187,7 @@ with tab3:
         else:
             with st.spinner("Membuat LKM Workbook..."):
                 try:
-                    client = genai.Client(api_key=api_key)
+                    genai.configure(api_key=api_key)
                     prompt_lkm = f"""
                     Bertindaklah sebagai Senior Instructional Designer & Educational Graphic Designer untuk SLB.
                     Tugas Anda adalah membuat Lembar Kerja Murid (LKM) berformat Markdown interaktif siap cetak A4.
@@ -206,10 +213,13 @@ with tab3:
                     
                     Sajikan dalam format Markdown yang sangat rapi dan ramah cetak.
                     """
-                    response = client.models.generate_content(
-                        model='gemini-1.5-flash',
-                        contents=prompt_lkm,
-                    )
+                    try:
+                        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                        response = model.generate_content(prompt_lkm)
+                    except:
+                        model = genai.GenerativeModel('gemini-pro')
+                        response = model.generate_content(prompt_lkm)
+
                     st.markdown(response.text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
@@ -228,7 +238,7 @@ with tab4:
         else:
             with st.spinner("Merancang konsep visual sampul..."):
                 try:
-                    client = genai.Client(api_key=api_key)
+                    genai.configure(api_key=api_key)
                     prompt_cover = f"""
                     Bertindaklah sebagai Creative Education Graphic Designer & Art Director.
                     Buatlah instruksi/prompt desain visual sampul A4 untuk dokumen berikut:
@@ -244,10 +254,13 @@ with tab4:
                     3. Gaya Ilustrasi (Flat Design / Modern Vector)
                     4. Prompt Text dalam Bahasa Inggris untuk generator gambar (Midjourney/DALL-E/Canva) agar menghasilkan latar belakang sampul A4 portrait yang bersih dan edukatif.
                     """
-                    response = client.models.generate_content(
-                        model='gemini-1.5-flash',
-                        contents=prompt_cover,
-                    )
+                    try:
+                        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                        response = model.generate_content(prompt_cover)
+                    except:
+                        model = genai.GenerativeModel('gemini-pro')
+                        response = model.generate_content(prompt_cover)
+
                     st.markdown(response.text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
