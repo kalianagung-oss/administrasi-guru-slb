@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
 # -----------------------------------------------------------------------------
 # KONFIGURASI HALAMAN STREAMLIT
@@ -27,30 +27,15 @@ st.sidebar.markdown("---")
 st.sidebar.info("Aplikasi Asisten Administrasi Guru SLB Kurikulum Merdeka.")
 
 # -----------------------------------------------------------------------------
-# FUNGSI PEMANGGILAN GEMINI DENGAN AUTO-FALLBACK MODEL
+# FUNGSI PEMANGGILAN GEMINI UNTUK TOKEN FORMAT AQ...
 # -----------------------------------------------------------------------------
-def generate_ai_response(prompt_text, user_api_key):
-    genai.configure(api_key=user_api_key)
-    
-    # Daftar model utama sampai cadangan
-    model_candidates = [
-        'gemini-1.5-flash',
-        'gemini-1.5-pro',
-        'models/gemini-1.5-flash',
-        'models/gemini-1.5-pro'
-    ]
-    
-    last_error = None
-    for model_name in model_candidates:
-        try:
-            model = genai.GenerativeModel(model_name)
-            response = model.generate_content(prompt_text)
-            return response.text
-        except Exception as e:
-            last_error = e
-            continue
-            
-    raise Exception(f"Gagal menghubungkan model AI: {last_error}")
+def call_gemini(prompt_text, user_api_key):
+    client = genai.Client(api_key=user_api_key)
+    response = client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=prompt_text,
+    )
+    return response.text
 
 # -----------------------------------------------------------------------------
 # FORM IDENTITAS (GLOBAL INPUT)
@@ -125,9 +110,8 @@ with tab1:
                     Sesuaikan tingkat kesulitan, instruksi, dan bahasa agar relevan dengan karakter peserta didik berkebutuhan khusus ({jenis_kekhususan}).
                     Gunakan prinsip hierarki konsep (mudah ke sulit, konkret ke abstrak).
                     """
-                    
-                    hasil_text = generate_ai_response(prompt_tab1, api_key)
-                    st.markdown(hasil_text)
+                    hasil = call_gemini(prompt_tab1, api_key)
+                    st.markdown(hasil)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
 
@@ -177,8 +161,8 @@ with tab2:
                     
                     Catatan Khusus: Sesuaikan langkah kegiatan dengan karakteristik anak {jenis_kekhususan}.
                     """
-                    hasil_text = generate_ai_response(prompt_rpp, api_key)
-                    st.markdown(hasil_text)
+                    hasil = call_gemini(prompt_rpp, api_key)
+                    st.markdown(hasil)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
 
@@ -222,8 +206,8 @@ with tab3:
                     
                     Sajikan dalam format Markdown yang sangat rapi dan ramah cetak.
                     """
-                    hasil_text = generate_ai_response(prompt_lkm, api_key)
-                    st.markdown(hasil_text)
+                    hasil = call_gemini(prompt_lkm, api_key)
+                    st.markdown(hasil)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
 
@@ -256,7 +240,7 @@ with tab4:
                     3. Gaya Ilustrasi (Flat Design / Modern Vector)
                     4. Prompt Text dalam Bahasa Inggris untuk generator gambar (Midjourney/DALL-E/Canva) agar menghasilkan latar belakang sampul A4 portrait yang bersih dan edukatif.
                     """
-                    hasil_text = generate_ai_response(prompt_cover, api_key)
-                    st.markdown(hasil_text)
+                    hasil = call_gemini(prompt_cover, api_key)
+                    st.markdown(hasil)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
