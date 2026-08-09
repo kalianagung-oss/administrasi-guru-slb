@@ -52,14 +52,14 @@ st.sidebar.markdown("---")
 st.sidebar.info("Aplikasi Administrasi Guru SLB - Kurikulum Merdeka")
 
 # -----------------------------------------------------------------------------
-# FUNGSI PANGGILAN DIRECT REST API PRESISI (MULTI-MODEL AUTO FALLBACK)
+# FUNGSI PEMANGGILAN REST API DENGAN PEMILIHAN MODEL DEDIKASI
 # -----------------------------------------------------------------------------
 def minta_bantuan_ai(prompt_text, key_val):
-    # Menguji kandidat endpoint resmi terbaru
-    models_to_try = [
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-        "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
+    # Mengutamakan model v1beta/gemini-2.5-flash dan gemini-2.0-flash
+    endpoints = [
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key_val}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={key_val}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key_val}"
     ]
     
     payload = {
@@ -68,8 +68,7 @@ def minta_bantuan_ai(prompt_text, key_val):
     headers = {"Content-Type": "application/json"}
     
     last_err = ""
-    for base_url in models_to_try:
-        url = f"{base_url}?key={key_val}"
+    for url in endpoints:
         try:
             res = requests.post(url, headers=headers, json=payload, timeout=60)
             if res.status_code == 200:
