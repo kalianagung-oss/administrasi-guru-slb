@@ -1,5 +1,6 @@
 import streamlit as st
-from google import genai
+import requests
+import json
 
 # -----------------------------------------------------------------------------
 # KONFIGURASI HALAMAN STREAMLIT
@@ -11,7 +12,7 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# PENGATURAN API KEY GEMINI
+# PENGATURAN API KEY GEMINI (Mendukung Input Manual & Secrets)
 # -----------------------------------------------------------------------------
 st.sidebar.title("🔑 Pengaturan AI")
 
@@ -27,15 +28,37 @@ st.sidebar.markdown("---")
 st.sidebar.info("Aplikasi Asisten Administrasi Guru SLB Kurikulum Merdeka.")
 
 # -----------------------------------------------------------------------------
-# FUNGSI PEMANGGILAN GEMINI UNTUK TOKEN FORMAT AQ...
+# FUNGSI PANGGILAN REST API DIRECT (MENJANGKAU KUNCI AQ... MAUPUN AIzaSy...)
 # -----------------------------------------------------------------------------
-def call_gemini(prompt_text, user_api_key):
-    client = genai.Client(api_key=user_api_key)
-    response = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=prompt_text,
-    )
-    return response.text
+def call_gemini_rest(prompt_text, user_key):
+    # Menggunakan endpoint v1beta REST API resmi
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={user_key}"
+    
+    headers = {
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt_text}
+                ]
+            }
+        ]
+    }
+    
+    response = requests.post(url, headers=headers, json=payload)
+    
+    if response.status_code == 200:
+        data = response.json()
+        try:
+            return data['candidates'][0]['content']['parts'][0]['text']
+        except (KeyError, IndexError):
+            raise Exception("Format respon AI tidak sesuai.")
+    else:
+        error_msg = response.json().get('error', {}).get('message', response.text)
+        raise Exception(f"Gagal dari server AI ({response.status_code}): {error_msg}")
 
 # -----------------------------------------------------------------------------
 # FORM IDENTITAS (GLOBAL INPUT)
@@ -110,10 +133,11 @@ with tab1:
                     Sesuaikan tingkat kesulitan, instruksi, dan bahasa agar relevan dengan karakter peserta didik berkebutuhan khusus ({jenis_kekhususan}).
                     Gunakan prinsip hierarki konsep (mudah ke sulit, konkret ke abstrak).
                     """
-                    hasil = call_gemini(prompt_tab1, api_key)
-                    st.markdown(hasil)
+                    
+                    hasil_text = call_gemini_rest(prompt_tab1, api_key)
+                    st.markdown(hasil_text)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
+                    st.error(f"Terjadi kesalahan: {e}")
 
 # =============================================================================
 # TAB 2: MODUL AJAR / RPP MENDALAM
@@ -161,10 +185,10 @@ with tab2:
                     
                     Catatan Khusus: Sesuaikan langkah kegiatan dengan karakteristik anak {jenis_kekhususan}.
                     """
-                    hasil = call_gemini(prompt_rpp, api_key)
-                    st.markdown(hasil)
+                    hasil_text = call_gemini_rest(prompt_rpp, api_key)
+                    st.markdown(hasil_text)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
+                    st.error(f"Terjadi kesalahan: {e}")
 
 # =============================================================================
 # TAB 3: LEMBAR KERJA MURID (LKM / LKPD) INTERAKTIF
@@ -206,10 +230,10 @@ with tab3:
                     
                     Sajikan dalam format Markdown yang sangat rapi dan ramah cetak.
                     """
-                    hasil = call_gemini(prompt_lkm, api_key)
-                    st.markdown(hasil)
+                    hasil_text = call_gemini_rest(prompt_lkm, api_key)
+                    st.markdown(hasil_text)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
+                    st.error(f"Terjadi kesalahan: {e}")
 
 # =============================================================================
 # TAB 4: GENERATOR PROMPT SAMPUL/COVER
@@ -240,7 +264,7 @@ with tab4:
                     3. Gaya Ilustrasi (Flat Design / Modern Vector)
                     4. Prompt Text dalam Bahasa Inggris untuk generator gambar (Midjourney/DALL-E/Canva) agar menghasilkan latar belakang sampul A4 portrait yang bersih dan edukatif.
                     """
-                    hasil = call_gemini(prompt_cover, api_key)
-                    st.markdown(hasil)
+                    hasil_text = call_gemini_rest(prompt_cover, api_key)
+                    st.markdown(hasil_text)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
+                    st.error(f"Terjadi kesalahan: {e}")
