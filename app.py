@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import json
 
 # -----------------------------------------------------------------------------
 # KONFIGURASI HALAMAN STREAMLIT
@@ -17,7 +16,6 @@ st.set_page_config(
 # -----------------------------------------------------------------------------
 st.markdown("""
 <style>
-    /* Styling Header & Banner Utama */
     .main-header {
         background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
         padding: 24px;
@@ -36,24 +34,10 @@ st.markdown("""
         font-size: 1.05rem;
         margin: 0;
     }
-    
-    /* Styling Card/Box Form Input */
-    .stCard {
-        background-color: #FFFFFF;
-        padding: 20px;
-        border-radius: 12px;
-        border: 1px solid #E5E7EB;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        margin-bottom: 20px;
-    }
-    
-    /* Custom Styling Sidebar */
     [data-testid="stSidebar"] {
         background-color: #F8FAFC;
         border-right: 1px solid #E2E8F0;
     }
-    
-    /* Tombol Utama */
     .stButton>button {
         background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
         color: white;
@@ -69,10 +53,10 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
 </style>
-""", unsafe_allow_html=unsafe_allow_html)
+""", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# PENGATURAN API KEY GEMINI (Mendukung Input Manual & Secrets)
+# PENGATURAN API KEY GEMINI
 # -----------------------------------------------------------------------------
 st.sidebar.title("⚙️ Pengaturan Aplikasi")
 
@@ -92,7 +76,6 @@ st.sidebar.write("1. Isi **Identitas Guru & Sekolah** pada form utama.\n2. Pilih
 # FUNGSI PEMANGGILAN REST API DENGAN FALLBACK MULTI-MODEL
 # -----------------------------------------------------------------------------
 def generate_ai_content(prompt_text, user_key):
-    # Menguji kandidat model dan versi API secara berurutan
     attempts = [
         ("v1beta", "gemini-2.0-flash"),
         ("v1beta", "gemini-1.5-flash"),
@@ -127,7 +110,7 @@ st.markdown("""
     <h1>🎓 Asisten Administrasi Guru SLB</h1>
     <p>Aplikasi Pembuat Perangkat Ajar & Modul Kurikulum Merdeka Terintegrasi untuk Sekolah Luar Biasa</p>
 </div>
-""", unsafe_allow_html=unsafe_allow_html)
+""", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # FORM IDENTITAS (GLOBAL INPUT CARD)
