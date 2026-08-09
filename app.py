@@ -8,85 +8,131 @@ import json
 st.set_page_config(
     page_title="Asisten Administrasi Guru SLB",
     page_icon="🎓",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+# -----------------------------------------------------------------------------
+# STYLING CSS KUSTOM (TAMPILAN MENARIK & MODERN)
+# -----------------------------------------------------------------------------
+st.markdown("""
+<style>
+    /* Styling Header & Banner Utama */
+    .main-header {
+        background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+        padding: 24px;
+        border-radius: 16px;
+        color: white;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .main-header h1 {
+        color: white !important;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .main-header p {
+        color: #E0E7FF !important;
+        font-size: 1.05rem;
+        margin: 0;
+    }
+    
+    /* Styling Card/Box Form Input */
+    .stCard {
+        background-color: #FFFFFF;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #E5E7EB;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    
+    /* Custom Styling Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #F8FAFC;
+        border-right: 1px solid #E2E8F0;
+    }
+    
+    /* Tombol Utama */
+    .stButton>button {
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+        color: white;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 10px 24px;
+        border: none;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+</style>
+""", unsafe_allow_html=unsafe_allow_html)
 
 # -----------------------------------------------------------------------------
 # PENGATURAN API KEY GEMINI (Mendukung Input Manual & Secrets)
 # -----------------------------------------------------------------------------
-st.sidebar.title("🔑 Pengaturan AI")
+st.sidebar.title("⚙️ Pengaturan Aplikasi")
 
 secrets_key = st.secrets.get("GEMINI_API_KEY", "")
 
 if secrets_key:
     api_key = secrets_key
-    st.sidebar.success("API Key terdeteksi dari Secrets Sistem!")
+    st.sidebar.success("✅ API Key Terhubung Otomatis!")
 else:
-    api_key = st.sidebar.text_input("Masukkan Google Gemini API Key:", type="password")
+    api_key = st.sidebar.text_input("🔑 Masukkan Gemini API Key:", type="password")
 
 st.sidebar.markdown("---")
-st.sidebar.info("Aplikasi Asisten Administrasi Guru SLB Kurikulum Merdeka.")
+st.sidebar.subheader("💡 Petunjuk Penggunaan")
+st.sidebar.write("1. Isi **Identitas Guru & Sekolah** pada form utama.\n2. Pilih **Tab Dokumen** yang ingin dibuat.\n3. Masukkan materi/topik pembelajaran.\n4. Klik tombol **Hasilkan Dokumen**.")
 
 # -----------------------------------------------------------------------------
-# FUNGSI PEMANGGILAN REST API UNIVERSAL (MENDUKUNG AIzaSy... MAUPUN AQ...)
+# FUNGSI PEMANGGILAN REST API DENGAN FALLBACK MULTI-MODEL
 # -----------------------------------------------------------------------------
-def call_gemini_universal(prompt_text, user_key):
-    # Coba via Endpoint v1 stabil terlebih dahulu
-    endpoints = [
-        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={user_key}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={user_key}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={user_key}"
+def generate_ai_content(prompt_text, user_key):
+    # Menguji kandidat model dan versi API secara berurutan
+    attempts = [
+        ("v1beta", "gemini-2.0-flash"),
+        ("v1beta", "gemini-1.5-flash"),
+        ("v1", "gemini-1.5-flash")
     ]
     
     payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt_text}
-                ]
-            }
-        ]
+        "contents": [{"parts": [{"text": prompt_text}]}]
     }
     
-    last_error_msg = ""
-    
-    for url in endpoints:
-        # Coba cara 1: URL Query Parameter
-        response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload)
-        
-        if response.status_code == 200:
-            data = response.json()
-            try:
+    last_err = ""
+    for api_ver, model_id in attempts:
+        url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{model_id}:generateContent?key={user_key}"
+        try:
+            res = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=60)
+            if res.status_code == 200:
+                data = res.json()
                 return data['candidates'][0]['content']['parts'][0]['text']
-            except (KeyError, IndexError):
-                continue
-        
-        # Coba cara 2: Bearer Header Token (Khusus Kunci AQ...)
-        headers_bearer = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {user_key}"
-        }
-        url_nobearer = url.split("?key=")[0]
-        response_bearer = requests.post(url_nobearer, headers=headers_bearer, json=payload)
-        
-        if response_bearer.status_code == 200:
-            data = response_bearer.json()
-            try:
-                return data['candidates'][0]['content']['parts'][0]['text']
-            except (KeyError, IndexError):
-                continue
-                
-        last_error_msg = response.json().get('error', {}).get('message', response.text)
-
-    raise Exception(f"Gagal menghubungkan ke server AI: {last_error_msg}")
+            else:
+                last_err = res.json().get('error', {}).get('message', res.text)
+        except Exception as e:
+            last_err = str(e)
+            continue
+            
+    raise Exception(f"Gagal memproses dokumen dari server AI. Detail: {last_err}")
 
 # -----------------------------------------------------------------------------
-# FORM IDENTITAS (GLOBAL INPUT)
+# HEADER UTAMA APLIKASI
 # -----------------------------------------------------------------------------
-st.title("🎓 Asisten Administrasi Guru SLB")
-st.subheader("Generator Perangkat Ajar & Modul Kurikulum Merdeka")
+st.markdown("""
+<div class="main-header">
+    <h1>🎓 Asisten Administrasi Guru SLB</h1>
+    <p>Aplikasi Pembuat Perangkat Ajar & Modul Kurikulum Merdeka Terintegrasi untuk Sekolah Luar Biasa</p>
+</div>
+""", unsafe_allow_html=unsafe_allow_html)
 
-with st.expander("📌 **Identitas Guru & Satuan Pendidikan** (Isi Terlebih Dahulu)", expanded=True):
+# -----------------------------------------------------------------------------
+# FORM IDENTITAS (GLOBAL INPUT CARD)
+# -----------------------------------------------------------------------------
+with st.expander("📌 **Identitas Guru & Satuan Pendidikan** (Klik untuk membuka/menutup)", expanded=True):
     col1, col2, col3 = st.columns(3)
     with col1:
         nama_guru = st.text_input("Nama Guru", "Nama Guru, S.Pd.")
@@ -98,7 +144,7 @@ with st.expander("📌 **Identitas Guru & Satuan Pendidikan** (Isi Terlebih Dahu
         tahun_ajaran = st.text_input("Tahun Pelajaran", "2026/2027")
     with col3:
         jenis_kekhususan = st.selectbox(
-            "Jenis Kekhususan/Hambatan",
+            "Jenis Kekhususan / Hambatan",
             ["Hambatan Intelektual (Tunagrahita)", "Hambatan Pendengaran (Tunarungu)", 
              "Hambatan Penglihatan (Tunanetra)", "Hambatan Anggota Gerak (Tunadaksa)", 
              "Autis / Spektrum Autisme", "Ganda / Kombinasi"]
@@ -107,33 +153,36 @@ with st.expander("📌 **Identitas Guru & Satuan Pendidikan** (Isi Terlebih Dahu
         mata_pelajaran = st.text_input("Mata Pelajaran", "IPAS / IPA")
 
 # -----------------------------------------------------------------------------
-# MENU UTAMA TAB
+# MENU UTAMA TAB DOKUMEN
 # -----------------------------------------------------------------------------
 tab1, tab2, tab3, tab4 = st.tabs([
-    "📋 1. CP, TP, ATP, Prota & Promes", 
-    "📝 2. RPP / Modul Ajar Mendalam", 
-    "🎨 3. LKM / LKPD Interaktif", 
-    "🖼️ 4. Prompt Sampul A4"
+    "📋 Pemetaan CP, TP, ATP & Prota/Promes", 
+    "📝 Modul Ajar / RPP Mendalam", 
+    "🎨 Lembar Kerja Murid (LKM / LKPD)", 
+    "🖼️ Generator Prompt Sampul A4"
 ])
 
 # =============================================================================
 # TAB 1: PEMETAAN CP, TP, ATP, PROTA, PROSEM & KKTP
 # =============================================================================
 with tab1:
-    st.header("Pemetaan CP, TP, ATP, Prota, Prosem & KKTP")
+    st.subheader("📋 Pemetaan Kurikulum & Program Tahunan/Semester")
     
-    cp_text = st.text_area("Masukkan Capaian Pembelajaran (CP) dari BSKAP/Dokumen Resmi:", height=120)
-    materi_list = st.text_area("Masukkan Daftar Materi/Bab per Semester (Pisahkan dengan baris baru):", 
-                               "Semester 1:\n- Mengenal Anggota Tubuh\n- Merawat Diri\n\nSemester 2:\n- Mengenal Lingkungan Rumah")
+    col_t1_left, col_t1_right = st.columns([1, 1])
+    with col_t1_left:
+        cp_text = st.text_area("Capaian Pembelajaran (CP) Resmi:", "Peserta didik dapat mengidentifikasi benda-benda di sekitar dan mengelompokkannya...", height=120)
+    with col_t1_right:
+        materi_list = st.text_area("Daftar Materi / Bab per Semester:", "Semester 1:\n- Mengenal Anggota Tubuh\n- Merawat Diri\n\nSemester 2:\n- Lingkungan Rumah", height=120)
     
     sub_option = st.radio("Pilih Dokumen yang Ingin Dihasilkan:", 
-                          ["CP, TP & ATP", "Program Tahunan (Prota)", "Program Semester (Prosem)", "KKTP & Asesmen Sumatif"])
+                          ["CP, TP & ATP", "Program Tahunan (Prota)", "Program Semester (Prosem)", "KKTP & Asesmen Sumatif"],
+                          horizontal=True)
 
-    if st.button("Hasilkan Dokumen Tab 1"):
+    if st.button("🚀 Hasilkan Pemetaan Kurikulum"):
         if not api_key:
-            st.error("API Key Gemini belum diisi di sidebar!")
+            st.error("⚠️ API Key Gemini belum terpasang di sidebar atau Secrets!")
         else:
-            with st.spinner("Sedang memproses dokumen..."):
+            with st.spinner("⏳ Sedang menyusun dokumen kurikulum..."):
                 try:
                     prompt_tab1 = f"""
                     Bertindaklah sebagai Konsultan Kurikulum Sekolah Luar Biasa (SLB).
@@ -154,31 +203,32 @@ with tab1:
                     Gunakan prinsip hierarki konsep (mudah ke sulit, konkret ke abstrak).
                     """
                     
-                    hasil_text = call_gemini_universal(prompt_tab1, api_key)
-                    st.markdown(hasil_text)
+                    hasil = generate_ai_content(prompt_tab1, api_key)
+                    st.success("✨ Dokumen Berhasil Dibuat!")
+                    st.markdown(hasil)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan: {e}")
+                    st.error(f"❌ {e}")
 
 # =============================================================================
 # TAB 2: MODUL AJAR / RPP MENDALAM
 # =============================================================================
 with tab2:
-    st.header("Rencana Pembelajaran Mendalam (RPP / Modul Ajar)")
+    st.subheader("📝 Rencana Pembelajaran Mendalam (RPP / Modul Ajar)")
     
     col_rpp1, col_rpp2 = st.columns(2)
     with col_rpp1:
-        topik_rpp = st.text_input("Topik Pembelajaran:", "Mengenal Nama-nama Buah")
+        topik_rpp = st.text_input("Topik Pembelajaran:", "Mengenal Buah-Buahan Segar")
         tp_rpp = st.text_area("Tujuan Pembelajaran (TP):", "Peserta didik dapat menunjukkan 3 jenis buah segar melalui benda konkret/gambar.")
         alokasi_waktu = st.text_input("Alokasi Waktu:", "2 x 35 menit")
     with col_rpp2:
         model_pembelajaran = st.selectbox("Model Pembelajaran:", ["Direct Instruction", "Contextual Learning", "Problem Based Learning", "Discovery Learning", "Project Based Learning (PjBL)"])
         prinsip_pembelajaran = st.multiselect("Prinsip Pembelajaran:", ["Bermakna", "Menggembirakan", "Berkesadaran"], default=["Bermakna", "Menggembirakan"])
 
-    if st.button("Hasilkan Modul Ajar / RPP"):
+    if st.button("🚀 Hasilkan Modul Ajar / RPP"):
         if not api_key:
-            st.error("API Key Gemini belum diisi di sidebar!")
+            st.error("⚠️ API Key Gemini belum terpasang!")
         else:
-            with st.spinner("Merancang Modul Ajar..."):
+            with st.spinner("⏳ Merancang Modul Ajar Khusus SLB..."):
                 try:
                     prompt_rpp = f"""
                     Bertindaklah sebagai Guru Penggerak dan Ahli Pembelajaran Khusus SLB.
@@ -205,25 +255,29 @@ with tab2:
                     
                     Catatan Khusus: Sesuaikan langkah kegiatan dengan karakteristik anak {jenis_kekhususan}.
                     """
-                    hasil_text = call_gemini_universal(prompt_rpp, api_key)
-                    st.markdown(hasil_text)
+                    hasil = generate_ai_content(prompt_rpp, api_key)
+                    st.success("✨ Modul Ajar Berhasil Dibuat!")
+                    st.markdown(hasil)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan: {e}")
+                    st.error(f"❌ {e}")
 
 # =============================================================================
 # TAB 3: LEMBAR KERJA MURID (LKM / LKPD) INTERAKTIF
 # =============================================================================
 with tab3:
-    st.header("Lembar Kerja Murid (LKM) / LKPD Interaktif A4")
+    st.subheader("🎨 Lembar Kerja Murid (LKM) / LKPD Interaktif A4")
     
-    materi_lkm = st.text_input("Materi / Topik LKM:", "Mewarnai dan Menghitung Buah")
-    tp_lkm = st.text_area("Tujuan Pembelajaran LKM:", "Murid dapat menghitung jumlah buah 1-5 dan mewarnainya.")
+    col_lkm1, col_lkm2 = st.columns(2)
+    with col_lkm1:
+        materi_lkm = st.text_input("Materi / Topik LKM:", "Mewarnai dan Menghitung Buah")
+    with col_lkm2:
+        tp_lkm = st.text_input("Tujuan Pembelajaran LKM:", "Murid dapat menghitung jumlah buah 1-5 dan mewarnainya.")
     
-    if st.button("Hasilkan LKM Interaktif"):
+    if st.button("🚀 Hasilkan LKPD Interaktif"):
         if not api_key:
-            st.error("API Key Gemini belum diisi di sidebar!")
+            st.error("⚠️ API Key Gemini belum terpasang!")
         else:
-            with st.spinner("Membuat LKM Workbook..."):
+            with st.spinner("⏳ Menyusun Lembar Kerja Murid..."):
                 try:
                     prompt_lkm = f"""
                     Bertindaklah sebagai Senior Instructional Designer & Educational Graphic Designer untuk SLB.
@@ -250,24 +304,25 @@ with tab3:
                     
                     Sajikan dalam format Markdown yang sangat rapi dan ramah cetak.
                     """
-                    hasil_text = call_gemini_universal(prompt_lkm, api_key)
-                    st.markdown(hasil_text)
+                    hasil = generate_ai_content(prompt_lkm, api_key)
+                    st.success("✨ LKPD Berhasil Dibuat!")
+                    st.markdown(hasil)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan: {e}")
+                    st.error(f"❌ {e}")
 
 # =============================================================================
 # TAB 4: GENERATOR PROMPT SAMPUL/COVER
 # =============================================================================
 with tab4:
-    st.header("Generator Prompt Sampul Dokumen A4")
+    st.subheader("🖼️ Generator Prompt Sampul Dokumen A4")
     
-    judul_sampul = st.text_input("Judul Dokumen Sampul:", "MODUL AJAR IPAS FASE A")
+    judul_sampul = st.text_input("Judul Dokumen Sampul:", "MODUL AJAR IPAS FASE A - KELAS 3 SLB")
     
-    if st.button("Buatkan Prompt Sampul"):
+    if st.button("🚀 Buatkan Prompt Sampul"):
         if not api_key:
-            st.error("API Key Gemini belum diisi di sidebar!")
+            st.error("⚠️ API Key Gemini belum terpasang!")
         else:
-            with st.spinner("Merancang konsep visual sampul..."):
+            with st.spinner("⏳ Merancang konsep visual sampul..."):
                 try:
                     prompt_cover = f"""
                     Bertindaklah sebagai Creative Education Graphic Designer & Art Director.
@@ -284,7 +339,8 @@ with tab4:
                     3. Gaya Ilustrasi (Flat Design / Modern Vector)
                     4. Prompt Text dalam Bahasa Inggris untuk generator gambar (Midjourney/DALL-E/Canva) agar menghasilkan latar belakang sampul A4 portrait yang bersih dan edukatif.
                     """
-                    hasil_text = call_gemini_universal(prompt_cover, api_key)
-                    st.markdown(hasil_text)
+                    hasil = generate_ai_content(prompt_cover, api_key)
+                    st.success("✨ Prompt Sampul Berhasil Dibuat!")
+                    st.markdown(hasil)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan: {e}")
+                    st.error(f"❌ {e}")
