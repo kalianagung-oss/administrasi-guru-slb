@@ -73,13 +73,14 @@ st.sidebar.subheader("💡 Petunjuk Penggunaan")
 st.sidebar.write("1. Isi **Identitas Guru & Sekolah** pada form utama.\n2. Pilih **Tab Dokumen** yang ingin dibuat.\n3. Masukkan materi/topik pembelajaran.\n4. Klik tombol **Hasilkan Dokumen**.")
 
 # -----------------------------------------------------------------------------
-# FUNGSI PEMANGGILAN REST API DENGAN FALLBACK MULTI-MODEL
+# FUNGSI PEMANGGILAN REST API DENGAN FORMAT ENDPOINT REST PRESISI
 # -----------------------------------------------------------------------------
 def generate_ai_content(prompt_text, user_key):
-    attempts = [
-        ("v1beta", "gemini-2.0-flash"),
-        ("v1beta", "gemini-1.5-flash"),
-        ("v1", "gemini-1.5-flash")
+    # Penulisan URL REST API tanpa kata 'models/' di path
+    endpoints = [
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={user_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={user_key}",
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={user_key}"
     ]
     
     payload = {
@@ -87,8 +88,7 @@ def generate_ai_content(prompt_text, user_key):
     }
     
     last_err = ""
-    for api_ver, model_id in attempts:
-        url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{model_id}:generateContent?key={user_key}"
+    for url in endpoints:
         try:
             res = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=60)
             if res.status_code == 200:
