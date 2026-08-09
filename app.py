@@ -11,10 +11,18 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
-# PENGATURAN API KEY GEMINI
+# PENGATURAN API KEY GEMINI (Mendukung Input Manual & Secrets)
 # -----------------------------------------------------------------------------
 st.sidebar.title("🔑 Pengaturan AI")
-api_key = st.sidebar.text_input("Masukkan Google Gemini API Key:", type="password")
+
+# Memeriksa apakah API Key sudah tersimpan di Secrets
+secrets_key = st.secrets.get("GEMINI_API_KEY", "")
+
+if secrets_key:
+    api_key = secrets_key
+    st.sidebar.success("API Key terdeteksi dari Secrets Sistem!")
+else:
+    api_key = st.sidebar.text_input("Masukkan Google Gemini API Key:", type="password")
 
 st.sidebar.markdown("---")
 st.sidebar.info("Aplikasi Asisten Administrasi Guru SLB Kurikulum Merdeka.")
@@ -100,7 +108,7 @@ with tab1:
                     )
                     st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan: {e}. Pastikan API Key diawali dengan 'AIzaSy...'")
+                    st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
 
 # =============================================================================
 # TAB 2: MODUL AJAR / RPP MENDALAM
@@ -155,7 +163,7 @@ with tab2:
                     )
                     st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan: {e}. Pastikan API Key diawali dengan 'AIzaSy...'")
+                    st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
 
 # =============================================================================
 # TAB 3: LEMBAR KERJA MURID (LKM / LKPD) INTERAKTIF
@@ -204,7 +212,7 @@ with tab3:
                     )
                     st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan: {e}. Pastikan API Key diawali dengan 'AIzaSy...'")
+                    st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
 
 # =============================================================================
 # TAB 4: GENERATOR PROMPT SAMPUL/COVER
@@ -242,4 +250,4 @@ with tab4:
                     )
                     st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Terjadi kesalahan: {e}. Pastikan API Key diawali dengan 'AIzaSy...'")
+                    st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
