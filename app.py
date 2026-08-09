@@ -28,15 +28,15 @@ st.sidebar.markdown("---")
 st.sidebar.info("Aplikasi Asisten Administrasi Guru SLB Kurikulum Merdeka.")
 
 # -----------------------------------------------------------------------------
-# FUNGSI PANGGILAN REST API DIRECT (MENJANGKAU KUNCI AQ... MAUPUN AIzaSy...)
+# FUNGSI PEMANGGILAN REST API UNIVERSAL (MENDUKUNG AIzaSy... MAUPUN AQ...)
 # -----------------------------------------------------------------------------
-def call_gemini_rest(prompt_text, user_key):
-    # Menggunakan endpoint v1beta REST API resmi
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={user_key}"
-    
-    headers = {
-        "Content-Type": "application/json"
-    }
+def call_gemini_universal(prompt_text, user_key):
+    # Coba via Endpoint v1 stabil terlebih dahulu
+    endpoints = [
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={user_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={user_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={user_key}"
+    ]
     
     payload = {
         "contents": [
@@ -48,17 +48,37 @@ def call_gemini_rest(prompt_text, user_key):
         ]
     }
     
-    response = requests.post(url, headers=headers, json=payload)
+    last_error_msg = ""
     
-    if response.status_code == 200:
-        data = response.json()
-        try:
-            return data['candidates'][0]['content']['parts'][0]['text']
-        except (KeyError, IndexError):
-            raise Exception("Format respon AI tidak sesuai.")
-    else:
-        error_msg = response.json().get('error', {}).get('message', response.text)
-        raise Exception(f"Gagal dari server AI ({response.status_code}): {error_msg}")
+    for url in endpoints:
+        # Coba cara 1: URL Query Parameter
+        response = requests.post(url, headers={"Content-Type": "application/json"}, json=payload)
+        
+        if response.status_code == 200:
+            data = response.json()
+            try:
+                return data['candidates'][0]['content']['parts'][0]['text']
+            except (KeyError, IndexError):
+                continue
+        
+        # Coba cara 2: Bearer Header Token (Khusus Kunci AQ...)
+        headers_bearer = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {user_key}"
+        }
+        url_nobearer = url.split("?key=")[0]
+        response_bearer = requests.post(url_nobearer, headers=headers_bearer, json=payload)
+        
+        if response_bearer.status_code == 200:
+            data = response_bearer.json()
+            try:
+                return data['candidates'][0]['content']['parts'][0]['text']
+            except (KeyError, IndexError):
+                continue
+                
+        last_error_msg = response.json().get('error', {}).get('message', response.text)
+
+    raise Exception(f"Gagal menghubungkan ke server AI: {last_error_msg}")
 
 # -----------------------------------------------------------------------------
 # FORM IDENTITAS (GLOBAL INPUT)
@@ -134,7 +154,7 @@ with tab1:
                     Gunakan prinsip hierarki konsep (mudah ke sulit, konkret ke abstrak).
                     """
                     
-                    hasil_text = call_gemini_rest(prompt_tab1, api_key)
+                    hasil_text = call_gemini_universal(prompt_tab1, api_key)
                     st.markdown(hasil_text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan: {e}")
@@ -185,7 +205,7 @@ with tab2:
                     
                     Catatan Khusus: Sesuaikan langkah kegiatan dengan karakteristik anak {jenis_kekhususan}.
                     """
-                    hasil_text = call_gemini_rest(prompt_rpp, api_key)
+                    hasil_text = call_gemini_universal(prompt_rpp, api_key)
                     st.markdown(hasil_text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan: {e}")
@@ -230,7 +250,7 @@ with tab3:
                     
                     Sajikan dalam format Markdown yang sangat rapi dan ramah cetak.
                     """
-                    hasil_text = call_gemini_rest(prompt_lkm, api_key)
+                    hasil_text = call_gemini_universal(prompt_lkm, api_key)
                     st.markdown(hasil_text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan: {e}")
@@ -264,7 +284,7 @@ with tab4:
                     3. Gaya Ilustrasi (Flat Design / Modern Vector)
                     4. Prompt Text dalam Bahasa Inggris untuk generator gambar (Midjourney/DALL-E/Canva) agar menghasilkan latar belakang sampul A4 portrait yang bersih dan edukatif.
                     """
-                    hasil_text = call_gemini_rest(prompt_cover, api_key)
+                    hasil_text = call_gemini_universal(prompt_cover, api_key)
                     st.markdown(hasil_text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan: {e}")
