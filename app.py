@@ -15,7 +15,6 @@ st.set_page_config(
 # -----------------------------------------------------------------------------
 st.sidebar.title("🔑 Pengaturan AI")
 
-# Memeriksa API Key dari Secrets Streamlit
 secrets_key = st.secrets.get("GEMINI_API_KEY", "")
 
 if secrets_key:
@@ -26,6 +25,32 @@ else:
 
 st.sidebar.markdown("---")
 st.sidebar.info("Aplikasi Asisten Administrasi Guru SLB Kurikulum Merdeka.")
+
+# -----------------------------------------------------------------------------
+# FUNGSI PEMANGGILAN GEMINI DENGAN AUTO-FALLBACK MODEL
+# -----------------------------------------------------------------------------
+def generate_ai_response(prompt_text, user_api_key):
+    genai.configure(api_key=user_api_key)
+    
+    # Daftar model utama sampai cadangan
+    model_candidates = [
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
+        'models/gemini-1.5-flash',
+        'models/gemini-1.5-pro'
+    ]
+    
+    last_error = None
+    for model_name in model_candidates:
+        try:
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(prompt_text)
+            return response.text
+        except Exception as e:
+            last_error = e
+            continue
+            
+    raise Exception(f"Gagal menghubungkan model AI: {last_error}")
 
 # -----------------------------------------------------------------------------
 # FORM IDENTITAS (GLOBAL INPUT)
@@ -82,7 +107,6 @@ with tab1:
         else:
             with st.spinner("Sedang memproses dokumen..."):
                 try:
-                    genai.configure(api_key=api_key)
                     prompt_tab1 = f"""
                     Bertindaklah sebagai Konsultan Kurikulum Sekolah Luar Biasa (SLB).
                     Identitas:
@@ -102,15 +126,8 @@ with tab1:
                     Gunakan prinsip hierarki konsep (mudah ke sulit, konkret ke abstrak).
                     """
                     
-                    # Mencari model alternatif jika flash mengalami limitasi
-                    try:
-                        model = genai.GenerativeModel('gemini-1.5-flash-latest')
-                        response = model.generate_content(prompt_tab1)
-                    except:
-                        model = genai.GenerativeModel('gemini-pro')
-                        response = model.generate_content(prompt_tab1)
-
-                    st.markdown(response.text)
+                    hasil_text = generate_ai_response(prompt_tab1, api_key)
+                    st.markdown(hasil_text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
 
@@ -135,7 +152,6 @@ with tab2:
         else:
             with st.spinner("Merancang Modul Ajar..."):
                 try:
-                    genai.configure(api_key=api_key)
                     prompt_rpp = f"""
                     Bertindaklah sebagai Guru Penggerak dan Ahli Pembelajaran Khusus SLB.
                     Buat RPP/Modul Ajar dengan format Markdown.
@@ -161,14 +177,8 @@ with tab2:
                     
                     Catatan Khusus: Sesuaikan langkah kegiatan dengan karakteristik anak {jenis_kekhususan}.
                     """
-                    try:
-                        model = genai.GenerativeModel('gemini-1.5-flash-latest')
-                        response = model.generate_content(prompt_rpp)
-                    except:
-                        model = genai.GenerativeModel('gemini-pro')
-                        response = model.generate_content(prompt_rpp)
-
-                    st.markdown(response.text)
+                    hasil_text = generate_ai_response(prompt_rpp, api_key)
+                    st.markdown(hasil_text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
 
@@ -187,7 +197,6 @@ with tab3:
         else:
             with st.spinner("Membuat LKM Workbook..."):
                 try:
-                    genai.configure(api_key=api_key)
                     prompt_lkm = f"""
                     Bertindaklah sebagai Senior Instructional Designer & Educational Graphic Designer untuk SLB.
                     Tugas Anda adalah membuat Lembar Kerja Murid (LKM) berformat Markdown interaktif siap cetak A4.
@@ -213,14 +222,8 @@ with tab3:
                     
                     Sajikan dalam format Markdown yang sangat rapi dan ramah cetak.
                     """
-                    try:
-                        model = genai.GenerativeModel('gemini-1.5-flash-latest')
-                        response = model.generate_content(prompt_lkm)
-                    except:
-                        model = genai.GenerativeModel('gemini-pro')
-                        response = model.generate_content(prompt_lkm)
-
-                    st.markdown(response.text)
+                    hasil_text = generate_ai_response(prompt_lkm, api_key)
+                    st.markdown(hasil_text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
 
@@ -238,7 +241,6 @@ with tab4:
         else:
             with st.spinner("Merancang konsep visual sampul..."):
                 try:
-                    genai.configure(api_key=api_key)
                     prompt_cover = f"""
                     Bertindaklah sebagai Creative Education Graphic Designer & Art Director.
                     Buatlah instruksi/prompt desain visual sampul A4 untuk dokumen berikut:
@@ -254,13 +256,7 @@ with tab4:
                     3. Gaya Ilustrasi (Flat Design / Modern Vector)
                     4. Prompt Text dalam Bahasa Inggris untuk generator gambar (Midjourney/DALL-E/Canva) agar menghasilkan latar belakang sampul A4 portrait yang bersih dan edukatif.
                     """
-                    try:
-                        model = genai.GenerativeModel('gemini-1.5-flash-latest')
-                        response = model.generate_content(prompt_cover)
-                    except:
-                        model = genai.GenerativeModel('gemini-pro')
-                        response = model.generate_content(prompt_cover)
-
-                    st.markdown(response.text)
+                    hasil_text = generate_ai_response(prompt_cover, api_key)
+                    st.markdown(hasil_text)
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menghubungi server AI: {e}")
