@@ -15,7 +15,7 @@ import streamlit as st
 # 1. KONFIGURASI HALAMAN & DATABASE SQLITE
 # ==========================================
 st.set_page_config(
-    page_title="SLB-AdminFlow AI | Platform Inklusif All-in-One",
+    page_title="LANTIP AI | Lembar Administrasi Pembelajaran Inklusif",
     page_icon="🏫",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -160,14 +160,14 @@ st.markdown(
     <style>
     .main-header {
         background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-        padding: 22px 28px;
+        padding: 24px 30px;
         border-radius: 12px;
         color: white;
         margin-bottom: 20px;
         box-shadow: 0 4px 14px rgba(0,0,0,0.12);
     }
-    .main-header h1 { color: #ffffff; font-weight: 700; margin: 0; font-size: 26px; }
-    .main-header p { color: #e0e6ed; margin-top: 4px; margin-bottom: 0; font-size: 13px; }
+    .main-header h1 { color: #ffffff; font-weight: 800; margin: 0; font-size: 28px; letter-spacing: 0.5px; }
+    .main-header p { color: #e0e6ed; margin-top: 6px; margin-bottom: 0; font-size: 13.5px; }
     .info-card {
         background-color: #f8fafc;
         border-left: 4px solid #2563eb;
@@ -293,8 +293,8 @@ def login_page():
   st.markdown(
       """
         <div class="main-header">
-            <h1>🏫 SLB-AdminFlow AI</h1>
-            <p>Sistem Login Guru Inklusif - Generator Administrasi Pembelajaran Otomatis & Terintegrasi (CP, TP, ATP, Prota, Prosem, Modul Ajar, PPI & Rubrik Asesmen)</p>
+            <h1>🏫 LANTIP AI</h1>
+            <p><b>L</b>embar <b>A</b>dmi<b>N</b>is<b>T</b>ras<b>I</b> <b>P</b>embelajaran — Platform Administrasi Guru SLB & Sekolah Inklusif Terintegrasi AI</p>
         </div>
     """,
       unsafe_allow_html=True,
@@ -367,8 +367,8 @@ def main_dashboard():
   st.markdown(
       f"""
         <div class="main-header">
-            <h1>🏫 SLB-AdminFlow AI</h1>
-            <p>Selamat Datang, <b>{user_row[2] or st.session_state.username}</b>! Generator Administrasi Pembelajaran Inklusif Terintegrasi <b>8 Dimensi Profil Lulusan & PPI</b></p>
+            <h1>🏫 LANTIP AI</h1>
+            <p>Selamat Datang, <b>{user_row[2] or st.session_state.username}</b>! (Platform Lembar Administrasi Pembelajaran Inklusif Terintegrasi AI)</p>
         </div>
     """,
       unsafe_allow_html=True,
@@ -424,7 +424,7 @@ def main_dashboard():
 
   # NAVIGASI TAB UTAMA
   nav_tab1, nav_tab2 = st.tabs(
-      ["⚡ Workspace AI Generator", "📁 Riwayat Pekerjaan Saya"]
+      ["⚡ Workspace LANTIP AI", "📁 Riwayat Pekerjaan Saya"]
   )
 
   # ==========================================
@@ -462,10 +462,9 @@ def main_dashboard():
         height=90,
     )
 
-    # Tombol AI Generate Lengkap Paket All-in-One
     if st.button(
-        "🤖 Generasi Otomatis Paket Komplit (CP, TP, ATP, Prota, Prosem, Modul"
-        " Ajar, PPI & Rubrik)",
+        "🤖 Generasi Otomatis Administrasi Komplit (CP → TP → ATP → Prota →"
+        " Prosem → Modul Ajar → PPI → Rubrik)",
         type="primary",
     ):
       api_key_use = api_key_db.strip()
@@ -476,20 +475,20 @@ def main_dashboard():
         )
       else:
         with st.spinner(
-            "AI sedang merumuskan CP-TP-ATP, Prota-Prosem, Modul Ajar (8 Dimensi"
-            " Profil Lulusan), PPI & Rubrik Asesmen..."
+            "LANTIP AI sedang merumuskan CP-TP-ATP, Prota-Prosem, Modul Ajar (8"
+            " Dimensi Profil Lulusan), PPI & Rubrik Asesmen..."
         ):
           try:
             client = genai.Client(api_key=api_key_use)
 
             prompt = f"""
-                        Kamu adalah pakar kurikulum pembelajaran inklusif SLB di Indonesia.
+                        Kamu adalah pakar kurikulum pembelajaran inklusif SLB di Indonesia (LANTIP AI - Lembar Administrasi Pembelajaran).
                         Tolong analisis Capaian Pembelajaran (CP) berikut secara mendalam untuk siswa SLB.
                         Kekhususan: {kekhususan}, Fase/Kelas: {fase_kelas}, Mata Pelajaran: {mata_pelajaran}.
 
                         Teks CP: "{cp_input}"
 
-                        INSTRUKSI KHUSUS:
+                        INSTRUKSI KHUSUS LANTIP AI:
                         1. Integrasikan 8 Dimensi Profil Lulusan yang paling relevan.
                         2. Buatkan rekomendasi Program Pembelajaran Individual (PPI) meliputi Baseline, Akomodasi, serta Target Jangka Panjang & Jangka Pendek.
                         3. Buatkan Rubrik Asesmen Adaptif (Ceklis Observasi, Skala Penilaian, & Catatan Anekdot).
@@ -547,7 +546,6 @@ def main_dashboard():
               if key_map in parsed:
                 st.session_state.form_data[state_key] = parsed[key_map]
 
-            # Save ke History
             title_project = (
                 f"Paket Administrasi {mata_pelajaran} {fase_kelas}"
                 f" ({kekhususan})"
@@ -563,8 +561,8 @@ def main_dashboard():
             )
 
             st.success(
-                "✅ Paket Administrasi Komplit Berhasil Dibuat & Tersimpan"
-                " Otomatis!"
+                "✅ Paket Administrasi Komplit Berhasil Dibuat oleh LANTIP AI &"
+                " Tersimpan Otomatis!"
             )
             st.rerun()
           except Exception as e:
@@ -572,7 +570,7 @@ def main_dashboard():
 
     st.divider()
 
-    # TABEL HASIL ANALISIS COMPREHENSIVE
+    # REVIEW DOKUMEN HASIL ANALISIS
     st.subheader("📋 Langkah 2: Review & Unduh Paket Administrasi")
 
     t1, t2, t3, t4, t5, t6 = st.tabs([
@@ -831,7 +829,7 @@ def main_dashboard():
 
       doc.add_paragraph().paragraph_format.space_before = Pt(12)
 
-      # Lampiran Prota, Prosem, Modul Ajar, PPI, Rubrik
+      # Lampiran
       p_pro = doc.add_paragraph()
       p_pro.add_run(
           "LAMPIRAN PROTA, PROSEM, MODUL AJAR, PPI & RUBRIK ASESMEN:\n"
@@ -881,7 +879,7 @@ def main_dashboard():
           label="📥 Download File Word Komplit (.docx)",
           data=docx_bytes,
           file_name=(
-              f"Administrasi_Komplit_{mata_pelajaran}_{st.session_state.username}.docx"
+              f"Administrasi_LANTIP_{mata_pelajaran}_{st.session_state.username}.docx"
           ),
           mime=(
               "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -898,8 +896,8 @@ def main_dashboard():
 
     if not history_items:
       st.info(
-          "Belum ada riwayat dokumen yang tersimpan. Gunakan menu 'Workspace AI"
-          " Generator' untuk membuat analisis CP baru!"
+          "Belum ada riwayat dokumen yang tersimpan. Gunakan menu 'Workspace"
+          " LANTIP AI' untuk membuat analisis CP baru!"
       )
     else:
       for item in history_items:
@@ -925,7 +923,7 @@ def main_dashboard():
               st.session_state.form_data = json.loads(data_json_str)
               st.success(
                   "Dokumen berhasil dimuat ke Workspace! Silakan cek di tab"
-                  " 'Workspace AI Generator'."
+                  " 'Workspace LANTIP AI'."
               )
               st.rerun()
 
