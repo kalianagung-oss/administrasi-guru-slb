@@ -58,15 +58,15 @@ if "form_data" not in st.session_state:
           " dari guru."
       ),
       "atp1": (
-          "Murid dapat mengamati dan mengenali bentuk serta warna benda konkret"
-          " yang ditunjukkan oleh guru di depan kelas."
+          "1. Murid dapat mengamati dan mengenali bentuk serta warna benda"
+          " konkret yang ditunjukkan oleh guru di depan kelas."
       ),
       "atp2": (
-          "Murid dapat menunjuk dengan tepat benda-benda kelas saat guru"
+          "2. Murid dapat menunjuk dengan tepat benda-benda kelas saat guru"
           " menyebutkan namanya."
       ),
       "atp3": (
-          "Murid dapat menyebutkan kembali nama benda kelas sederhana yang"
+          "3. Murid dapat menyebutkan kembali nama benda kelas sederhana yang"
           " ditunjuk."
       ),
       "kegiatan_konkret": (
@@ -135,16 +135,17 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
                 RUANG LINGKUP: [Ruang Lingkup Materi]
                 MATERI POKOK: [Materi Pokok]
                 TP: [Tujuan Pembelajaran Adaptif yang terukur]
-                ATP1: Murid dapat [Tahap 1 pengenalan/konkret]
-                ATP2: Murid dapat [Tahap 2 pemahaman/koneksi]
-                ATP3: Murid dapat [Tahap 3 penerapan/respon]
+                ATP1: 1. Murid dapat [Tahap 1 pengenalan/konkret]
+                ATP2: 2. Murid dapat [Tahap 2 pemahaman/koneksi]
+                ATP3: 3. Murid dapat [Tahap 3 penerapan/respon]
                 KEGIATAN: [List kegiatan konkret/sensorik adaptif SLB]
                 ASESMEN: [Bentuk asesmen adaptif/observasi]
                 ALOKASI: [Estimasi JP, misal: 6 JP (2 x Pertemuan)]
                 """
 
+        # PERBAIKAN: Menggunakan model gemini-1.5-flash
         response = client.models.generate_content(
-            model="gemini-2.5-flash", contents=prompt
+            model="gemini-1.5-flash", contents=prompt
         )
 
         res_text = response.text
@@ -154,7 +155,7 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
             key, val = line.split(":", 1)
             parsed[key.strip()] = val.strip()
 
-        # Update Session State
+        # Update Session State secara aman
         if "ELEMEN" in parsed:
           st.session_state.form_data["elemen"] = parsed["ELEMEN"]
         if "RUANG LINGKUP" in parsed:
@@ -177,6 +178,7 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
           st.session_state.form_data["alokasi_waktu"] = parsed["ALOKASI"]
 
         st.success("✅ Analisis AI Berhasil! Hasil telah diisikan ke form di bawah.")
+        st.rerun()
       except Exception as e:
         st.error(f"Gagal memproses AI: {e}")
 
