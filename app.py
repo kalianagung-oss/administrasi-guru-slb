@@ -278,7 +278,6 @@ def main_dashboard():
     st.write(f"Halo, **{user_row[2] or st.session_state.username}**")
     st.divider()
 
-    # MENU BAR UTAMA BERBASIS SIDEBAR
     menu = st.radio(
         "Pilih Menu Administrasi:",
         [
@@ -325,7 +324,6 @@ def main_dashboard():
       st.session_state.logged_in = False
       st.rerun()
 
-  # ROUTING KONTEN MENU
   if menu == "⚡ Workspace Generator AI":
     st.markdown(
         """
@@ -397,8 +395,9 @@ def main_dashboard():
                         PPI_TEXT: [Dokumen PPI Baseline & Target]
                         RUBRIK_TEXT: [Rubrik Asesmen & Ceklis]
                         """
+            # Menggunakan model gemini-3.6-flash yang aktif dan stabil
             response = client.models.generate_content(
-                model="gemini-2.5-flash", contents=prompt
+                model="gemini-3.6-flash", contents=prompt
             )
             res_text = response.text
             parsed = {}
@@ -445,11 +444,6 @@ def main_dashboard():
 
   elif menu == "📊 Analisis CP, TP & ATP":
     st.header("📊 Analisis Capaian Pembelajaran, TP, & ATP Rinci")
-    st.caption(
-        "Format selaras dengan standar dokumen resmi instrumen SLB N 1 Kulon"
-        " Progo."
-    )
-
     st.session_state.form_data["elemen"] = st.text_input(
         "Elemen", st.session_state.form_data["elemen"]
     )
@@ -485,9 +479,6 @@ def main_dashboard():
       st.session_state.form_data["alokasi_waktu"] = st.text_input(
           "Alokasi Waktu", st.session_state.form_data["alokasi_waktu"]
       )
-    st.info(
-        "💡 Perubahan teks di atas otomatis tersimpan dan siap dicetak ke Word."
-    )
 
   elif menu == "📅 Program Tahunan (Prota)":
     st.header("📅 Program Tahunan (Prota)")
@@ -543,10 +534,6 @@ def main_dashboard():
 
   elif menu == "📥 Unduh Dokumen Lengkap":
     st.header("📥 Unduh Perangkat Administrasi Word (.docx)")
-    st.write(
-        "Dokumen disusun lengkap dengan format tabel selaras standar SLB N 1"
-        " Kulon Progo."
-    )
 
     def generate_docx():
       doc = docx.Document()
@@ -617,7 +604,6 @@ def main_dashboard():
       r_t.font.size = Pt(12)
       r_t.font.color.rgb = RGBColor(27, 54, 93)
 
-      # Tabel Utama Analisis
       headers = [
           "No",
           "Elemen",
@@ -674,7 +660,6 @@ def main_dashboard():
 
       doc.add_paragraph().paragraph_format.space_before = Pt(12)
 
-      # Lampiran
       p_pro = doc.add_paragraph()
       r_lamp = p_pro.add_run(
           "LAMPIRAN PROTA, PROSEM, MODUL AJAR, PPI & RUBRIK ASESMEN:\n"
@@ -696,7 +681,6 @@ def main_dashboard():
 
       doc.add_paragraph().paragraph_format.space_before = Pt(14)
 
-      # Tanda Tangan
       sig_tbl = doc.add_table(rows=1, cols=2)
       sig_tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
       cL, cR = sig_tbl.rows[0].cells
@@ -743,10 +727,7 @@ def main_dashboard():
             st.rerun()
 
 
-# ==========================================
-# 5. ROUTING UTAMA
-# ==========================================
 if st.session_state.logged_in:
   main_dashboard()
 else:
-    login_page()
+  login_page()
