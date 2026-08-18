@@ -5,21 +5,27 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 from docx.shared import Inches, Pt, RGBColor
+from google import genai
 import streamlit as st
 
-# 1. Konfigurasi Halaman (HARUS DI BARIS PALING ATAS SETELAH IMPORT)
+# 1. Konfigurasi Halaman Streamlit
 st.set_page_config(
-    page_title="SLB-AdminFlow",
-    layout="wide",  # Perbaikan: 'layout', bukan 'page_layout'
+    page_title="SLB-AdminFlow AI",
+    layout="wide",
     page_icon="🏫",
 )
 
-st.title("🏫 SLB-AdminFlow")
-st.caption(
-    "Platform Generator Administrasi Pembelajaran Inklusif Terintegrasi"
+st.title("🏫 SLB-AdminFlow (AI Powered)")
+st.caption("Platform Generator Administrasi Pembelajaran Inklusif Terintegrasi AI")
+
+# --- SIDEBAR: PENGATURAN API KEY & KOP SURAT ---
+st.sidebar.header("🔑 Integrasi AI (Gratis)")
+gemini_api_key = st.sidebar.text_input(
+    "Masukkan Gemini API Key",
+    type="password",
+    help="Dapatkan gratis di aistudio.google.com",
 )
 
-# --- SIDEBAR: PENGATURAN PROFIL & KOP SURAT ---
 st.sidebar.header("⚙️ Pengaturan Profil & Logo")
 uploaded_logo = st.sidebar.file_uploader(
     "Upload Logo Sekolah (PNG/JPG)", type=["png", "jpg", "jpeg"]
@@ -40,8 +46,42 @@ kota_tgl = st.sidebar.text_input(
     "Tempat & Tanggal Cetak", "Kulon Progo, 18 Agustus 2026"
 )
 
+# --- INISIALISASI SESSION STATE UNTUK FORM ---
+if "form_data" not in st.session_state:
+  st.session_state.form_data = {
+      "elemen": "Menyimak",
+      "ruang_lingkup": "Komunikasi Lisan & Instruksi Harian",
+      "materi_pokok": "Mengenal Nama Benda di Kelas",
+      "tp_text": (
+          "Peserta didik mampu menunjukkan dan menyebutkan nama benda-benda"
+          " yang ada di lingkungan kelas setelah mendengarkan instruksi lisan"
+          " dari guru."
+      ),
+      "atp1": (
+          "Murid dapat mengamati dan mengenali bentuk serta warna benda konkret"
+          " yang ditunjukkan oleh guru di depan kelas."
+      ),
+      "atp2": (
+          "Murid dapat menunjuk dengan tepat benda-benda kelas saat guru"
+          " menyebutkan namanya."
+      ),
+      "atp3": (
+          "Murid dapat menyebutkan kembali nama benda kelas sederhana yang"
+          " ditunjuk."
+      ),
+      "kegiatan_konkret": (
+          "• Bermain kartu gambar konkret (PECS) dan mencocokkan benda"
+          " asli.\n• Permainan 'Tebak & Tunjuk Benda'."
+      ),
+      "bentuk_asesmen": (
+          "• Unjuk Kerja (Observasi Langsung)\n• Lembar Ceklis Perilaku /"
+          " Kinerja"
+      ),
+      "alokasi_waktu": "6 JP (2 x Pertemuan)",
+  }
+
 # --- FORM INPUT ADMINISTRASI ---
-st.header("📝 Analisis CP → TP → ATP")
+st.header("📝 Modul Input CP & AI Generator")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -65,60 +105,119 @@ with col3:
       ],
   )
 
-elemen = st.text_input("Elemen CP", "Menyimak")
-cp_text = st.text_area(
-    "Capaian Pembelajaran (CP)",
+cp_input = st.text_area(
+    "Tempel / Tulis Teks Capaian Pembelajaran (CP) di sini:",
     "Peserta didik mampu menyimak dan memahami instruksi lisan sederhana yang"
     " berkaitan dengan aktivitas sehari-hari di kelas dan lingkungan sekolah.",
-)
-ruang_lingkup = st.text_input(
-    "Ruang Lingkup Materi", "Komunikasi Lisan & Instruksi Harian"
-)
-materi_pokok = st.text_input("Materi Pokok", "Mengenal Nama Benda di Kelas")
-tp_text = st.text_area(
-    "Tujuan Pembelajaran (TP)",
-    "Peserta didik mampu menunjukkan dan menyebutkan nama benda-benda yang ada"
-    " di lingkungan kelas setelah mendengarkan instruksi lisan dari guru.",
+    height=100,
 )
 
-st.subheader("📌 Alur Tujuan Pembelajaran (ATP)")
-atp1 = st.text_input(
-    "ATP Tahap 1",
-    "Murid dapat mengamati dan mengenali bentuk serta warna benda konkret yang"
-    " ditunjukkan oleh guru di depan kelas.",
+# --- TOMBOL AI GENERATE ---
+if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
+  if not gemini_api_key:
+    st.error(
+        "⚠️ Silakan masukkan Gemini API Key terlebih dahulu di panel sebelah"
+        " kiri (Sidebar)!"
+    )
+  else:
+    with st.spinner("AI sedang menganalisis CP dan merumuskan TP, ATP..."):
+      try:
+        client = genai.Client(api_key=gemini_api_key)
+        prompt = f"""
+                Kamu adalah pakar kurikulum pembelajaran inklusif SLB di Indonesia.
+                Tolong analisis Capaian Pembelajaran (CP) berikut untuk siswa SLB dengan Kekhususan: {kekhususan}, Fase/Kelas: {fase_kelas}, Mata Pelajaran: {mata_pelajaran}.
+
+                Teks CP: "{cp_input}"
+
+                Berikan respon HANYA dalam format teks terstruktur persis seperti pola di bawah ini (gunakan pemisah tanda titik dua ':'):
+
+                ELEMEN: [Nama Elemen CP]
+                RUANG LINGKUP: [Ruang Lingkup Materi]
+                MATERI POKOK: [Materi Pokok]
+                TP: [Tujuan Pembelajaran Adaptif yang terukur]
+                ATP1: Murid dapat [Tahap 1 pengenalan/konkret]
+                ATP2: Murid dapat [Tahap 2 pemahaman/koneksi]
+                ATP3: Murid dapat [Tahap 3 penerapan/respon]
+                KEGIATAN: [List kegiatan konkret/sensorik adaptif SLB]
+                ASESMEN: [Bentuk asesmen adaptif/observasi]
+                ALOKASI: [Estimasi JP, misal: 6 JP (2 x Pertemuan)]
+                """
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash", contents=prompt
+        )
+
+        res_text = response.text
+        parsed = {}
+        for line in res_text.split("\n"):
+          if ":" in line:
+            key, val = line.split(":", 1)
+            parsed[key.strip()] = val.strip()
+
+        # Update Session State
+        if "ELEMEN" in parsed:
+          st.session_state.form_data["elemen"] = parsed["ELEMEN"]
+        if "RUANG LINGKUP" in parsed:
+          st.session_state.form_data["ruang_lingkup"] = parsed["RUANG LINGKUP"]
+        if "MATERI POKOK" in parsed:
+          st.session_state.form_data["materi_pokok"] = parsed["MATERI POKOK"]
+        if "TP" in parsed:
+          st.session_state.form_data["tp_text"] = parsed["TP"]
+        if "ATP1" in parsed:
+          st.session_state.form_data["atp1"] = parsed["ATP1"]
+        if "ATP2" in parsed:
+          st.session_state.form_data["atp2"] = parsed["ATP2"]
+        if "ATP3" in parsed:
+          st.session_state.form_data["atp3"] = parsed["ATP3"]
+        if "KEGIATAN" in parsed:
+          st.session_state.form_data["kegiatan_konkret"] = parsed["KEGIATAN"]
+        if "ASESMEN" in parsed:
+          st.session_state.form_data["bentuk_asesmen"] = parsed["ASESMEN"]
+        if "ALOKASI" in parsed:
+          st.session_state.form_data["alokasi_waktu"] = parsed["ALOKASI"]
+
+        st.success("✅ Analisis AI Berhasil! Hasil telah diisikan ke form di bawah.")
+      except Exception as e:
+        st.error(f"Gagal memproses AI: {e}")
+
+st.markdown("---")
+st.subheader("📋 Hasil Analisis CP → TP → ATP (Bisa Diedit Manual)")
+
+elemen = st.text_input("Elemen CP", st.session_state.form_data["elemen"])
+ruang_lingkup = st.text_input(
+    "Ruang Lingkup Materi", st.session_state.form_data["ruang_lingkup"]
 )
-atp2 = st.text_input(
-    "ATP Tahap 2",
-    "Murid dapat menunjuk dengan tepat benda-benda kelas (meja, kursi, papan"
-    " tulis, buku) saat guru menyebutkan namanya.",
+materi_pokok = st.text_input(
+    "Materi Pokok", st.session_state.form_data["materi_pokok"]
 )
-atp3 = st.text_input(
-    "ATP Tahap 3",
-    "Murid dapat menyebutkan kembali nama benda kelas sederhana yang ditunjuk"
-    " oleh guru atau teman.",
+tp_text = st.text_area(
+    "Tujuan Pembelajaran (TP)", st.session_state.form_data["tp_text"]
 )
+
+st.write("**Alur Tujuan Pembelajaran (ATP):**")
+atp1 = st.text_input("ATP Tahap 1", st.session_state.form_data["atp1"])
+atp2 = st.text_input("ATP Tahap 2", st.session_state.form_data["atp2"])
+atp3 = st.text_input("ATP Tahap 3", st.session_state.form_data["atp3"])
 
 col_a, col_b, col_c = st.columns(3)
 with col_a:
   kegiatan_konkret = st.text_area(
-      "Kegiatan Konkret",
-      "• Bermain kartu gambar konkret (PECS) dan mencocokkan benda asli.\n•"
-      " Permainan 'Tebak & Tunjuk Benda'.",
+      "Kegiatan Konkret", st.session_state.form_data["kegiatan_konkret"]
   )
 with col_b:
   bentuk_asesmen = st.text_area(
-      "Bentuk Asesmen",
-      "• Unjuk Kerja (Observasi Langsung)\n• Lembar Ceklis Perilaku / Kinerja",
+      "Bentuk Asesmen", st.session_state.form_data["bentuk_asesmen"]
   )
 with col_c:
-  alokasi_waktu = st.text_input("Alokasi Waktu", "6 JP (2 x Pertemuan)")
+  alokasi_waktu = st.text_input(
+      "Alokasi Waktu", st.session_state.form_data["alokasi_waktu"]
+  )
 
 
 # --- FUNGSIONALITAS GENERATE WORD ---
 def generate_docx():
   doc = docx.Document()
 
-  # Set Halaman Landscape A4
   sec = doc.sections[0]
   sec.orientation = docx.enum.section.WD_ORIENT.LANDSCAPE
   sec.page_width = Inches(11.69)
@@ -128,7 +227,6 @@ def generate_docx():
   sec.left_margin = Inches(0.6)
   sec.right_margin = Inches(0.6)
 
-  # Helper Warna dan Margin Tabel
   def set_cell_background(cell, fill_hex):
     tcPr = cell._element.get_or_add_tcPr()
     tcPr.append(parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>'))
@@ -148,7 +246,7 @@ def generate_docx():
       tcMar.append(node)
     tcPr.append(tcMar)
 
-  # 1. KOP SURAT
+  # Kop Surat
   kop_tbl = doc.add_table(rows=1, cols=2)
   kop_tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
   c_logo, c_info = kop_tbl.rows[0].cells
@@ -179,7 +277,7 @@ def generate_docx():
       )
   )
 
-  # 2. JUDUL DOKUMEN
+  # Judul Dokumen
   p_title = doc.add_paragraph()
   p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
   r_t = p_title.add_run("ANALISIS CP, TP, ATP, DAN RENCANA PEMBELAJARAN INKLUSIF")
@@ -194,7 +292,7 @@ def generate_docx():
       f"Mapel: {mata_pelajaran} | {fase_kelas} | Kekhususan: {kekhususan}"
   ).font.size = Pt(9)
 
-  # 3. TABEL 10 KOLOM BERWARNA
+  # Tabel 10 Kolom Berwarna
   headers = [
       "No",
       "Elemen",
@@ -225,11 +323,11 @@ def generate_docx():
     run.font.size = Pt(8)
 
   row_cells = table.add_row().cells
-  atp_combined = f"1. {atp1}\n\n2. {atp2}\n\n3. {atp3}"
+  atp_combined = f"{atp1}\n\n{atp2}\n\n{atp3}"
   data = [
       "1",
       elemen,
-      cp_text,
+      cp_input,
       ruang_lingkup,
       materi_pokok,
       tp_text,
@@ -252,7 +350,7 @@ def generate_docx():
 
   doc.add_paragraph().paragraph_format.space_before = Pt(12)
 
-  # 4. BLOK TANDA TANGAN
+  # Tanda Tangan
   sig_tbl = doc.add_table(rows=1, cols=2)
   sig_tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
   cL, cR = sig_tbl.rows[0].cells
@@ -272,7 +370,7 @@ def generate_docx():
   return bio.getvalue()
 
 
-# --- TOMBOL CETAK / DOWNLOAD ---
+# --- TOMBOL CETAK ---
 st.markdown("---")
 if st.button("🚀 Buat Dokumen Analisis CP-TP-ATP (.docx)", type="primary"):
   docx_bytes = generate_docx()
