@@ -7,7 +7,7 @@ from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 import io
 
-# Konfigurasi Halaman Streamlit
+# Konfigurasi Halaman Streamlit (HARUS DITAROH PINGGIR/ATAS SENDIRI)
 st.set_page_config(page_title="SLB-AdminFlow", page_layout="wide", page_icon="🏫")
 
 st.title("🏫 SLB-AdminFlow")
