@@ -53,7 +53,7 @@ st.markdown(
     }
     </style>
 """,
-    unsafe_allow_style_scope=True,
+    unsafe_allow_html=True,
 )
 
 # Header Banner Aplikasi
