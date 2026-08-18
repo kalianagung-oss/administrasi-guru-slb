@@ -145,9 +145,9 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
                 ALOKASI: [Estimasi JP, misal: 6 JP (2 x Pertemuan)]
                 """
 
-        # Pemanggilan langsung dengan model Gemini 2.0 / 1.5 Flash resmi
+        # Pemanggilan menggunakan model gemini-3.6-flash terbaru
         response = client.models.generate_content(
-            model="gemini-2.0-flash", contents=prompt
+            model="gemini-3.6-flash", contents=prompt
         )
 
         res_text = response.text
