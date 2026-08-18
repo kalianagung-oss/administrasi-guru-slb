@@ -5,10 +5,10 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 from docx.shared import Inches, Pt, RGBColor
-from google import genai
+import google.generativeai as genai
 import streamlit as st
 
-# 1. Konfigurasi Halaman Streamlit
+# 1. Konfigurasi Halaman Streamlit (HARUS DI BARIS ATAS)
 st.set_page_config(
     page_title="SLB-AdminFlow AI",
     layout="wide",
@@ -107,8 +107,8 @@ with col3:
 
 cp_input = st.text_area(
     "Tempel / Tulis Teks Capaian Pembelajaran (CP) di sini:",
-    "Peserta didik mampu menyimak dan memahami instruksi lisan sederhana yang"
-    " berkaitan dengan aktivitas sehari-hari di kelas dan lingkungan sekolah.",
+    "Mengurutkan dan membandingkan banyak-sedikit dengan benda konkret sampai"
+    " dengan 10 serta memahami besar-kecil suatu benda",
     height=100,
 )
 
@@ -122,7 +122,10 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
   else:
     with st.spinner("AI sedang menganalisis CP dan merumuskan TP, ATP..."):
       try:
-        client = genai.Client(api_key=gemini_api_key)
+        # Konfigurasi Pustaka Gemini Resmi
+        genai.configure(api_key=gemini_api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
         prompt = f"""
                 Kamu adalah pakar kurikulum pembelajaran inklusif SLB di Indonesia.
                 Tolong analisis Capaian Pembelajaran (CP) berikut untuk siswa SLB dengan Kekhususan: {kekhususan}, Fase/Kelas: {fase_kelas}, Mata Pelajaran: {mata_pelajaran}.
@@ -143,19 +146,16 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
                 ALOKASI: [Estimasi JP, misal: 6 JP (2 x Pertemuan)]
                 """
 
-        # PERBAIKAN: Menggunakan model gemini-1.5-flash
-        response = client.models.generate_content(
-            model="gemini-1.5-flash", contents=prompt
-        )
-
+        response = model.generate_content(prompt)
         res_text = response.text
+
         parsed = {}
         for line in res_text.split("\n"):
           if ":" in line:
             key, val = line.split(":", 1)
             parsed[key.strip()] = val.strip()
 
-        # Update Session State secara aman
+        # Update Session State
         if "ELEMEN" in parsed:
           st.session_state.form_data["elemen"] = parsed["ELEMEN"]
         if "RUANG LINGKUP" in parsed:
