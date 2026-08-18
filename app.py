@@ -5,10 +5,10 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 from docx.shared import Inches, Pt, RGBColor
-import google.generativeai as genai
+from google import genai
 import streamlit as st
 
-# 1. Konfigurasi Halaman Streamlit (HARUS DI BARIS ATAS)
+# 1. Konfigurasi Halaman Streamlit
 st.set_page_config(
     page_title="SLB-AdminFlow AI",
     layout="wide",
@@ -122,9 +122,8 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
   else:
     with st.spinner("AI sedang menganalisis CP dan merumuskan TP, ATP..."):
       try:
-        # Konfigurasi Pustaka Gemini Resmi
-        genai.configure(api_key=gemini_api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # Client Google GenAI Resmi
+        client = genai.Client(api_key=gemini_api_key.strip())
 
         prompt = f"""
                 Kamu adalah pakar kurikulum pembelajaran inklusif SLB di Indonesia.
@@ -146,7 +145,16 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
                 ALOKASI: [Estimasi JP, misal: 6 JP (2 x Pertemuan)]
                 """
 
-        response = model.generate_content(prompt)
+        # Mencoba panggilan model melalui client baru
+        try:
+          response = client.models.generate_content(
+              model="gemini-2.5-flash", contents=prompt
+          )
+        except Exception:
+          response = client.models.generate_content(
+              model="gemini-1.5-flash", contents=prompt
+          )
+
         res_text = response.text
 
         parsed = {}
