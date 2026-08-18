@@ -15,20 +15,18 @@ import streamlit as st
 # 1. KONFIGURASI HALAMAN & DATABASE SQLITE
 # ==========================================
 st.set_page_config(
-    page_title="SLB-AdminFlow AI | Platform Inklusif",
+    page_title="SLB-AdminFlow AI | Platform Inklusif All-in-One",
     page_icon="🏫",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Inisialisasi Database SQLite
 DB_NAME = "slb_adminflow.db"
 
 
 def init_db():
   conn = sqlite3.connect(DB_NAME)
   c = conn.cursor()
-  # Tabel User
   c.execute("""
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
@@ -45,7 +43,6 @@ def init_db():
             kota_tgl TEXT
         )
     """)
-  # Tabel Riwayat Dokumen/Pekerjaan
   c.execute("""
         CREATE TABLE IF NOT EXISTS history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,7 +68,6 @@ def hash_password(password):
   return hashlib.sha256(str.encode(password)).hexdigest()
 
 
-# Helper DB User
 def get_user_profile(username):
   conn = sqlite3.connect(DB_NAME)
   c = conn.cursor()
@@ -108,7 +104,6 @@ def update_user_profile(username, profile_data):
   conn.close()
 
 
-# Helper DB History
 def save_history(
     username, title, mapel, fase_kelas, kekhususan, cp_input, data_dict
 ):
@@ -195,7 +190,6 @@ if "logged_in" not in st.session_state:
 if "username" not in st.session_state:
   st.session_state.username = ""
 
-# Defaults Form State
 if "form_data" not in st.session_state:
   st.session_state.form_data = {
       "elemen": "Bilangan / Analisis Data",
@@ -248,6 +242,47 @@ if "form_data" not in st.session_state:
           "Juli M3-M4: TP 1 (6 JP)\nAgustus M1-M2: TP 2 (6 JP)\nJanuari M2-M3:"
           " TP 3 (6 JP)\nMei M3: Asesmen Sumatif (6 JP)"
       ),
+      "dimensi_lulusan": (
+          "• Kemandirian dan Ketangguhan\n• Penalaran Kritis dan Pemecahan"
+          " Masalah\n• Komunikasi dan Kolaborasi"
+      ),
+      "modul_ajar": (
+          "A. IDENTITAS MODUL\n- Mapel: Matematika Inklusif\n- Fase/Kelas: Fase"
+          " A / Kelas I\n- Target Siswa: Hambatan Intelektual\n\nB. LINGKUP 8"
+          " DIMENSI PROFIL LULUSAN\n- Kemandirian & Ketangguhan: Berlatih"
+          " menunjuk benda secara mandiri.\n- Penalaran Kritis: Membedakan dua"
+          " kelompok benda.\n\nC. MEDIA & ALAT BANTU KONKRET\n- Balok kayu"
+          " warna-warni, kartu gambar PECS, benda nyata di kelas.\n\nD."
+          " LANGKAH PEMBELAJARAN (DEFERENSIASI)\n1. Awal (10 menit): Doa bersama"
+          " & Apersepsi bernyanyi angka.\n2. Inti (50 menit): Guru"
+          " mendemonstrasikan perbandingan benda. Murid mencoba langsung secara"
+          " bergantian.\n3. Penutup (10 menit): Refleksi positif dan pujian"
+          " atas kemajuan anak."
+      ),
+      "ppi_text": (
+          "A. PROFIL KEMAMPUAN AWAL (BASELINE)\n- Siswa telah mampu mengenal"
+          " simbol angka 1-5 dengan bantuan media visual, namun masih butuh"
+          " bimbingan saat membandingkan jumlah benda di atas 5.\n\nB. AKOMODASI"
+          " PEMBELAJARAN\n- Menggunakan media konkret taktil dan instrumen"
+          " visual PECS.\n- Pendampingan individu secara bertahap (Prompting"
+          " Verbal & Fisik).\n\nC. TARGET PROGRAM PEMBELAJARAN INDIVIDUAL"
+          " (PPI)\n1. Target Jangka Panjang (1 Tahun): Siswa mampu"
+          " membandingkan dan mengurutkan benda konkret 1-10 secara mandiri.\n2."
+          " Target Jangka Pendek (Semester 1): Siswa dapat menunjuk kelompok"
+          " benda yang lebih banyak atau sedikit pada rentang 1-5."
+      ),
+      "rubrik_text": (
+          "A. CEKLIS OBSERVASI ADAPTIF\n1. Mengamati dua kelompok benda konkret"
+          " [Sangat Mampu / Mampu Bantuan / Belum Mampu]\n2. Menunjuk kelompok"
+          " benda lebih banyak [Sangat Mampu / Mampu Bantuan / Belum Mampu]\n3."
+          " Menyebutkan nama ukuran benda (besar/kecil) [Sangat Mampu / Mampu"
+          " Bantuan / Belum Mampu]\n\nB. RUBRIK SKALA PENILAIAN\n- Sangat Mampu"
+          " (Skor 3): Melakukan tugas secara mandiri tanpa bantuan.\n- Mampu"
+          " dengan Bantuan (Skor 2): Melakukan tugas dengan isyarat/bimbingan"
+          " verbal/fisik ringan.\n- Belum Mampu (Skor 1): Membutuhkan bimbingan"
+          " penuh dari guru.\n\nC. FORMAT CATATAN ANEKDOT\nTanggal: ........."
+          " | Catatan Perilaku / Respon Siswa: ...................."
+      ),
   }
 
 
@@ -259,7 +294,7 @@ def login_page():
       """
         <div class="main-header">
             <h1>🏫 SLB-AdminFlow AI</h1>
-            <p>Sistem Login Guru Inklusif - Generator Administrasi Pembelajaran Otomatis & Terintegrasi</p>
+            <p>Sistem Login Guru Inklusif - Generator Administrasi Pembelajaran Otomatis & Terintegrasi (CP, TP, ATP, Prota, Prosem, Modul Ajar, PPI & Rubrik Asesmen)</p>
         </div>
     """,
       unsafe_allow_html=True,
@@ -329,18 +364,17 @@ def login_page():
 def main_dashboard():
   user_row = get_user_profile(st.session_state.username)
 
-  # Header Aplikasi
   st.markdown(
       f"""
         <div class="main-header">
             <h1>🏫 SLB-AdminFlow AI</h1>
-            <p>Selamat Datang, <b>{user_row[2] or st.session_state.username}</b>! Platform Generator Administrasi Pembelajaran Inklusif Terintegrasi AI</p>
+            <p>Selamat Datang, <b>{user_row[2] or st.session_state.username}</b>! Generator Administrasi Pembelajaran Inklusif Terintegrasi <b>8 Dimensi Profil Lulusan & PPI</b></p>
         </div>
     """,
       unsafe_allow_html=True,
   )
 
-  # --- SIDEBAR: PENGATURAN PROFIL & LOGOUT ---
+  # --- SIDEBAR ---
   with st.sidebar:
     st.header(f"👤 Profil Guru: {st.session_state.username}")
     if st.button("🚪 Keluar (Logout)"):
@@ -388,13 +422,13 @@ def main_dashboard():
       st.success("✅ Profil & API Key berhasil disimpan permanen!")
       st.rerun()
 
-  # --- MAIN NAVIGASI UTAMA (MODUL WORKSPACE & RIWAYAT) ---
+  # NAVIGASI TAB UTAMA
   nav_tab1, nav_tab2 = st.tabs(
       ["⚡ Workspace AI Generator", "📁 Riwayat Pekerjaan Saya"]
   )
 
   # ==========================================
-  # TAB 1: WORKSPACE GENERATOR CP-TP-ATP-PROTA-PROSEM
+  # TAB 1: WORKSPACE AI GENERATOR
   # ==========================================
   with nav_tab1:
     st.subheader("🎯 Langkah 1: Input Capaian Pembelajaran (CP)")
@@ -428,9 +462,11 @@ def main_dashboard():
         height=90,
     )
 
-    # Tombol AI Generate
+    # Tombol AI Generate Lengkap Paket All-in-One
     if st.button(
-        "🤖 Generasi Otomatis (CP → TP → ATP → Prota → Prosem)", type="primary"
+        "🤖 Generasi Otomatis Paket Komplit (CP, TP, ATP, Prota, Prosem, Modul"
+        " Ajar, PPI & Rubrik)",
+        type="primary",
     ):
       api_key_use = api_key_db.strip()
       if not api_key_use:
@@ -440,7 +476,8 @@ def main_dashboard():
         )
       else:
         with st.spinner(
-            "AI sedang membedah CP dan merumuskan TP, ATP, Prota & Prosem..."
+            "AI sedang merumuskan CP-TP-ATP, Prota-Prosem, Modul Ajar (8 Dimensi"
+            " Profil Lulusan), PPI & Rubrik Asesmen..."
         ):
           try:
             client = genai.Client(api_key=api_key_use)
@@ -452,7 +489,10 @@ def main_dashboard():
 
                         Teks CP: "{cp_input}"
 
-                        Bedah seluruh poin kompetensi CP dan buatkan perencanaan terstruktur meliputi TP, ATP, Prota (Semester 1 & 2), dan Prosem.
+                        INSTRUKSI KHUSUS:
+                        1. Integrasikan 8 Dimensi Profil Lulusan yang paling relevan.
+                        2. Buatkan rekomendasi Program Pembelajaran Individual (PPI) meliputi Baseline, Akomodasi, serta Target Jangka Panjang & Jangka Pendek.
+                        3. Buatkan Rubrik Asesmen Adaptif (Ceklis Observasi, Skala Penilaian, & Catatan Anekdot).
 
                         Berikan respon HANYA dalam format teks terstruktur persis seperti pola di bawah ini (gunakan pemisah tanda titik dua ':'):
 
@@ -469,6 +509,10 @@ def main_dashboard():
                         PROTA_SEM1: [Daftar TP & Alokasi JP untuk Semester 1]
                         PROTA_SEM2: [Daftar TP & Alokasi JP untuk Semester 2]
                         PROSEM: [Distribusi Mingguan per Bulan untuk Sem 1 & 2]
+                        DIMENSI_LULUSAN: [List Dimensi dari 8 Dimensi Profil Lulusan]
+                        MODUL_AJAR: [Rancangan Modul Ajar Adaptif: Identitas, Target 8 Dimensi Lulusan, Media Konkret, Langkah Pembelajaran Deferensiasi, & Refleksi]
+                        PPI_TEXT: [Dokumen PPI: Baseline Kemampuan Awal, Akomodasi Pembelajaran, Target Jangka Panjang, Target Jangka Pendek]
+                        RUBRIK_TEXT: [Instrumen Asesmen: Ceklis Observasi, Skala Penilaian 1-3, dan Format Catatan Anekdot]
                         """
 
             response = client.models.generate_content(
@@ -481,7 +525,6 @@ def main_dashboard():
                 key, val = line.split(":", 1)
                 parsed[key.strip()] = val.strip()
 
-            # Update Session State
             for key_map, state_key in [
                 ("ELEMEN", "elemen"),
                 ("RUANG LINGKUP", "ruang_lingkup"),
@@ -496,13 +539,18 @@ def main_dashboard():
                 ("PROTA_SEM1", "prota_sem1"),
                 ("PROTA_SEM2", "prota_sem2"),
                 ("PROSEM", "prosem_detail"),
+                ("DIMENSI_LULUSAN", "dimensi_lulusan"),
+                ("MODUL_AJAR", "modul_ajar"),
+                ("PPI_TEXT", "ppi_text"),
+                ("RUBRIK_TEXT", "rubrik_text"),
             ]:
               if key_map in parsed:
                 st.session_state.form_data[state_key] = parsed[key_map]
 
-            # Oto Save ke History Database
+            # Save ke History
             title_project = (
-                f"Analisis CP {mata_pelajaran} {fase_kelas} ({kekhususan})"
+                f"Paket Administrasi {mata_pelajaran} {fase_kelas}"
+                f" ({kekhususan})"
             )
             save_history(
                 st.session_state.username,
@@ -515,7 +563,8 @@ def main_dashboard():
             )
 
             st.success(
-                "✅ Analisis Berhasil & Tersimpan Otomatis ke Riwayat!"
+                "✅ Paket Administrasi Komplit Berhasil Dibuat & Tersimpan"
+                " Otomatis!"
             )
             st.rerun()
           except Exception as e:
@@ -523,13 +572,16 @@ def main_dashboard():
 
     st.divider()
 
-    # REVIEW & TABEL HASIL ANALISIS
-    st.subheader("📋 Langkah 2: Review & Unduh Hasil Analisis")
+    # TABEL HASIL ANALISIS COMPREHENSIVE
+    st.subheader("📋 Langkah 2: Review & Unduh Paket Administrasi")
 
-    t1, t2, t3 = st.tabs([
+    t1, t2, t3, t4, t5, t6 = st.tabs([
         "📊 1. Analisis CP-TP-ATP",
-        "📅 2. Program Tahunan (Prota)",
-        "🗓️ 3. Program Semester (Prosem)",
+        "📅 2. Prota",
+        "🗓️ 3. Prosem",
+        "📝 4. Modul Ajar (8 Dimensi)",
+        "🩺 5. Dokumen PPI",
+        "📋 6. Rubrik Asesmen & Ceklis",
     ])
 
     with t1:
@@ -615,6 +667,32 @@ def main_dashboard():
           height=200,
       )
 
+    with t4:
+      dimensi_lulusan = st.text_area(
+          "Target 8 Dimensi Profil Lulusan yang Dikembangkan",
+          st.session_state.form_data["dimensi_lulusan"],
+          height=90,
+      )
+      modul_ajar = st.text_area(
+          "Draft Modul Ajar Adaptif Rinci",
+          st.session_state.form_data["modul_ajar"],
+          height=200,
+      )
+
+    with t5:
+      ppi_text = st.text_area(
+          "Rancangan Program Pembelajaran Individual (PPI)",
+          st.session_state.form_data["ppi_text"],
+          height=260,
+      )
+
+    with t6:
+      rubrik_text = st.text_area(
+          "Instrumen Rubrik Asesmen & Ceklis Observasi Adaptif",
+          st.session_state.form_data["rubrik_text"],
+          height=260,
+      )
+
     # --- FUNGSIONALITAS CETAK WORD DOCX ---
     def generate_docx():
       doc = docx.Document()
@@ -677,7 +755,7 @@ def main_dashboard():
       p_title = doc.add_paragraph()
       p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
       r_t = p_title.add_run(
-          "ANALISIS CP, TP, ATP, DAN PERENCANAAN PEMBELAJARAN INKLUSIF"
+          "PAKET PERENCANAAN PEMBELAJARAN INKLUSIF & ADMINISTRASI GURU SLB"
       )
       r_t.font.bold = True
       r_t.font.size = Pt(12)
@@ -691,7 +769,7 @@ def main_dashboard():
           f" {kekhususan}"
       ).font.size = Pt(9)
 
-      # Tabel 10 Kolom
+      # Tabel Analisis
       headers = [
           "No",
           "Elemen",
@@ -753,17 +831,22 @@ def main_dashboard():
 
       doc.add_paragraph().paragraph_format.space_before = Pt(12)
 
-      # Lampiran Prota & Prosem
+      # Lampiran Prota, Prosem, Modul Ajar, PPI, Rubrik
       p_pro = doc.add_paragraph()
-      p_pro.add_run("PROGRAM TAHUNAN & PROSEM (LAMPIRAN):\n").font.bold = True
       p_pro.add_run(
-          f"• Semester 1:\n{prota_sem1}\n\n• Semester 2:\n{prota_sem2}\n\n•"
-          f" Rincian Prosem:\n{prosem_detail}"
+          "LAMPIRAN PROTA, PROSEM, MODUL AJAR, PPI & RUBRIK ASESMEN:\n"
+      ).font.bold = True
+      p_pro.add_run(
+          f"• Semester 1:\n{prota_sem1}\n\n• Semester 2:\n{prota_sem2}\n\n• Target"
+          f" 8 Dimensi Profil Lulusan:\n{dimensi_lulusan}\n\n• Modul Ajar"
+          f" Adaptif:\n{modul_ajar}\n\n• Program Pembelajaran Individual"
+          f" (PPI):\n{ppi_text}\n\n• Rubrik Asesmen & Ceklis"
+          f" Observasi:\n{rubrik_text}"
       ).font.size = Pt(8)
 
       doc.add_paragraph().paragraph_format.space_before = Pt(12)
 
-      # Tanda Tangan Side-by-Side
+      # Tanda Tangan
       sig_tbl = doc.add_table(rows=1, cols=2)
       sig_tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
       cL, cR = sig_tbl.rows[0].cells
@@ -788,17 +871,17 @@ def main_dashboard():
     with col_d1:
       st.write("🚀 **Dokumen Siap Dicetak:**")
       st.caption(
-          "Unduh dokumen administrasi utuh (Kop Sekolah, Tabel Berwarna,"
-          " CP-TP-ATP, Prota, Prosem, dan Tanda Tangan) dalam format Word"
-          " (.docx)."
+          "Unduh paket komplit dokumen administrasi (CP-TP-ATP, Prota, Prosem,"
+          " Modul Ajar 8 Dimensi Lulusan, PPI, dan Rubrik Asesmen) dalam format"
+          " Word (.docx)."
       )
     with col_d2:
       docx_bytes = generate_docx()
       st.download_button(
-          label="📥 Download File Word (.docx)",
+          label="📥 Download File Word Komplit (.docx)",
           data=docx_bytes,
           file_name=(
-              f"Administrasi_{mata_pelajaran}_{st.session_state.username}.docx"
+              f"Administrasi_Komplit_{mata_pelajaran}_{st.session_state.username}.docx"
           ),
           mime=(
               "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -807,7 +890,7 @@ def main_dashboard():
       )
 
   # ==========================================
-  # TAB 2: RIWAYAT PEKERJAAN (DATABASE PROJECT HISTORY)
+  # TAB 2: RIWAYAT PEKERJAAN
   # ==========================================
   with nav_tab2:
     st.subheader("📁 Database Riwayat Pekerjaan Saya")
