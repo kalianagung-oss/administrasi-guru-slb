@@ -123,7 +123,6 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
   else:
     with st.spinner("AI sedang menganalisis CP dan merumuskan TP, ATP..."):
       try:
-        # SDK Google GenAI Resmi
         client = genai.Client(api_key=api_key_clean)
 
         prompt = f"""
@@ -146,58 +145,44 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
                 ALOKASI: [Estimasi JP, misal: 6 JP (2 x Pertemuan)]
                 """
 
-        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash"]
-        response = None
-        used_model = ""
+        # Pemanggilan langsung dengan model Gemini 2.0 / 1.5 Flash resmi
+        response = client.models.generate_content(
+            model="gemini-2.0-flash", contents=prompt
+        )
 
-        for model_id in candidate_models:
-          try:
-            response = client.models.generate_content(
-                model=model_id, contents=prompt
-            )
-            used_model = model_id
-            break
-          except Exception:
-            continue
+        res_text = response.text
+        parsed = {}
+        for line in res_text.split("\n"):
+          if ":" in line:
+            key, val = line.split(":", 1)
+            parsed[key.strip()] = val.strip()
 
-        if response is None:
-          st.error(
-              "Gagal menghubungi server Gemini AI. Pastikan API Key Anda aktif."
-          )
-        else:
-          res_text = response.text
-          parsed = {}
-          for line in res_text.split("\n"):
-            if ":" in line:
-              key, val = line.split(":", 1)
-              parsed[key.strip()] = val.strip()
+        # Update Session State
+        if "ELEMEN" in parsed:
+          st.session_state.form_data["elemen"] = parsed["ELEMEN"]
+        if "RUANG LINGKUP" in parsed:
+          st.session_state.form_data["ruang_lingkup"] = parsed["RUANG LINGKUP"]
+        if "MATERI POKOK" in parsed:
+          st.session_state.form_data["materi_pokok"] = parsed["MATERI POKOK"]
+        if "TP" in parsed:
+          st.session_state.form_data["tp_text"] = parsed["TP"]
+        if "ATP1" in parsed:
+          st.session_state.form_data["atp1"] = parsed["ATP1"]
+        if "ATP2" in parsed:
+          st.session_state.form_data["atp2"] = parsed["ATP2"]
+        if "ATP3" in parsed:
+          st.session_state.form_data["atp3"] = parsed["ATP3"]
+        if "KEGIATAN" in parsed:
+          st.session_state.form_data["kegiatan_konkret"] = parsed["KEGIATAN"]
+        if "ASESMEN" in parsed:
+          st.session_state.form_data["bentuk_asesmen"] = parsed["ASESMEN"]
+        if "ALOKASI" in parsed:
+          st.session_state.form_data["alokasi_waktu"] = parsed["ALOKASI"]
 
-          # Update Session State
-          if "ELEMEN" in parsed:
-            st.session_state.form_data["elemen"] = parsed["ELEMEN"]
-          if "RUANG LINGKUP" in parsed:
-            st.session_state.form_data["ruang_lingkup"] = parsed["RUANG LINGKUP"]
-          if "MATERI POKOK" in parsed:
-            st.session_state.form_data["materi_pokok"] = parsed["MATERI POKOK"]
-          if "TP" in parsed:
-            st.session_state.form_data["tp_text"] = parsed["TP"]
-          if "ATP1" in parsed:
-            st.session_state.form_data["atp1"] = parsed["ATP1"]
-          if "ATP2" in parsed:
-            st.session_state.form_data["atp2"] = parsed["ATP2"]
-          if "ATP3" in parsed:
-            st.session_state.form_data["atp3"] = parsed["ATP3"]
-          if "KEGIATAN" in parsed:
-            st.session_state.form_data["kegiatan_konkret"] = parsed["KEGIATAN"]
-          if "ASESMEN" in parsed:
-            st.session_state.form_data["bentuk_asesmen"] = parsed["ASESMEN"]
-          if "ALOKASI" in parsed:
-            st.session_state.form_data["alokasi_waktu"] = parsed["ALOKASI"]
-
-          st.success(f"✅ Analisis Berhasil menggunakan model ({used_model})!")
-          st.rerun()
+        st.success("✅ Analisis AI Berhasil! Hasil telah diisikan ke form.")
+        st.rerun()
       except Exception as e:
-        st.error(f"Gagal memproses AI: {e}")
+        st.error(f"Pesan Detail Error dari AI: {e}")
 
 st.markdown("---")
 st.subheader("📋 Hasil Analisis CP → TP → ATP (Bisa Diedit Manual)")
