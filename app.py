@@ -23,7 +23,7 @@ st.sidebar.header("🔑 Integrasi AI (Gratis)")
 gemini_api_key = st.sidebar.text_input(
     "Masukkan Gemini API Key",
     type="password",
-    help="Dapatkan gratis di aistudio.google.com",
+    help="Tempelkan kode API Key (AQ...) dari Google AI Studio",
 )
 
 st.sidebar.header("⚙️ Pengaturan Profil & Logo")
@@ -114,16 +114,17 @@ cp_input = st.text_area(
 
 # --- TOMBOL AI GENERATE ---
 if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
-  if not gemini_api_key:
+  api_key_clean = gemini_api_key.strip()
+  if not api_key_clean:
     st.error(
-        "⚠️ Silakan masukkan Gemini API Key terlebih dahulu di panel sebelah"
-        " kiri (Sidebar)!"
+        "⚠️ Silakan masukkan API Key terlebih dahulu di panel sebelah kiri"
+        " (Sidebar)!"
     )
   else:
     with st.spinner("AI sedang menganalisis CP dan merumuskan TP, ATP..."):
       try:
-        # Client Google GenAI Resmi
-        client = genai.Client(api_key=gemini_api_key.strip())
+        # SDK Google GenAI Resmi
+        client = genai.Client(api_key=api_key_clean)
 
         prompt = f"""
                 Kamu adalah pakar kurikulum pembelajaran inklusif SLB di Indonesia.
@@ -145,48 +146,56 @@ if st.button("🤖 Analisis CP Menggunakan AI", type="secondary"):
                 ALOKASI: [Estimasi JP, misal: 6 JP (2 x Pertemuan)]
                 """
 
-        # Mencoba panggilan model melalui client baru
-        try:
-          response = client.models.generate_content(
-              model="gemini-2.5-flash", contents=prompt
+        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash"]
+        response = None
+        used_model = ""
+
+        for model_id in candidate_models:
+          try:
+            response = client.models.generate_content(
+                model=model_id, contents=prompt
+            )
+            used_model = model_id
+            break
+          except Exception:
+            continue
+
+        if response is None:
+          st.error(
+              "Gagal menghubungi server Gemini AI. Pastikan API Key Anda aktif."
           )
-        except Exception:
-          response = client.models.generate_content(
-              model="gemini-1.5-flash", contents=prompt
-          )
+        else:
+          res_text = response.text
+          parsed = {}
+          for line in res_text.split("\n"):
+            if ":" in line:
+              key, val = line.split(":", 1)
+              parsed[key.strip()] = val.strip()
 
-        res_text = response.text
+          # Update Session State
+          if "ELEMEN" in parsed:
+            st.session_state.form_data["elemen"] = parsed["ELEMEN"]
+          if "RUANG LINGKUP" in parsed:
+            st.session_state.form_data["ruang_lingkup"] = parsed["RUANG LINGKUP"]
+          if "MATERI POKOK" in parsed:
+            st.session_state.form_data["materi_pokok"] = parsed["MATERI POKOK"]
+          if "TP" in parsed:
+            st.session_state.form_data["tp_text"] = parsed["TP"]
+          if "ATP1" in parsed:
+            st.session_state.form_data["atp1"] = parsed["ATP1"]
+          if "ATP2" in parsed:
+            st.session_state.form_data["atp2"] = parsed["ATP2"]
+          if "ATP3" in parsed:
+            st.session_state.form_data["atp3"] = parsed["ATP3"]
+          if "KEGIATAN" in parsed:
+            st.session_state.form_data["kegiatan_konkret"] = parsed["KEGIATAN"]
+          if "ASESMEN" in parsed:
+            st.session_state.form_data["bentuk_asesmen"] = parsed["ASESMEN"]
+          if "ALOKASI" in parsed:
+            st.session_state.form_data["alokasi_waktu"] = parsed["ALOKASI"]
 
-        parsed = {}
-        for line in res_text.split("\n"):
-          if ":" in line:
-            key, val = line.split(":", 1)
-            parsed[key.strip()] = val.strip()
-
-        # Update Session State
-        if "ELEMEN" in parsed:
-          st.session_state.form_data["elemen"] = parsed["ELEMEN"]
-        if "RUANG LINGKUP" in parsed:
-          st.session_state.form_data["ruang_lingkup"] = parsed["RUANG LINGKUP"]
-        if "MATERI POKOK" in parsed:
-          st.session_state.form_data["materi_pokok"] = parsed["MATERI POKOK"]
-        if "TP" in parsed:
-          st.session_state.form_data["tp_text"] = parsed["TP"]
-        if "ATP1" in parsed:
-          st.session_state.form_data["atp1"] = parsed["ATP1"]
-        if "ATP2" in parsed:
-          st.session_state.form_data["atp2"] = parsed["ATP2"]
-        if "ATP3" in parsed:
-          st.session_state.form_data["atp3"] = parsed["ATP3"]
-        if "KEGIATAN" in parsed:
-          st.session_state.form_data["kegiatan_konkret"] = parsed["KEGIATAN"]
-        if "ASESMEN" in parsed:
-          st.session_state.form_data["bentuk_asesmen"] = parsed["ASESMEN"]
-        if "ALOKASI" in parsed:
-          st.session_state.form_data["alokasi_waktu"] = parsed["ALOKASI"]
-
-        st.success("✅ Analisis AI Berhasil! Hasil telah diisikan ke form di bawah.")
-        st.rerun()
+          st.success(f"✅ Analisis Berhasil menggunakan model ({used_model})!")
+          st.rerun()
       except Exception as e:
         st.error(f"Gagal memproses AI: {e}")
 
